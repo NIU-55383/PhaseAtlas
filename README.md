@@ -12,7 +12,11 @@ python launch.py
 
 The launcher serves `dist/` on localhost and opens a browser. It requires Python 3.10+ but no Python scientific packages for the website. Do not open `index.html` with `file://`: JavaScript modules and workers need HTTP. Chrome or Edge is recommended for WebM export.
 
-Keep the website and research tools together in the PhaseAtlas repository. For Render, create a **Static Site**, use `main`, leave Root Directory empty, set Build Command to `echo "Static assets ready"`, and Publish Directory to `dist`. See `docs/DEPLOYMENT.md` for the complete setup.
+Keep the website and research tools together in the PhaseAtlas repository. On Render, use a **Python 3 Web Service** with `pip install -r requirements.txt` as the Build Command and `gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --access-logfile - --error-logfile -` as the Start Command. Set Health Check Path to `/healthz`. Commit and push these server files before deploying. See `docs/DEPLOYMENT.md` for every dashboard setting.
+
+The Flask application serves only `dist/` and exposes a deployment health check. Scientific evolution still runs in browser workers. Server-side simulation, accounts, persistent experiments, and background jobs are future features, not enabled by choosing Web Service alone.
+
+To check the server routes after installing the root requirements, run `python -m unittest discover -s tests -p test_server.py`. Gunicorn runs on Linux (including Render); keep using `python launch.py` for the dependency-free Windows preview.
 
 ## What works
 
@@ -51,7 +55,7 @@ This generates four groups of PNG, SVG and PDF figures. `04_reference_dispersion
 ## Read first
 
 - `docs/ACCEPTANCE.md`: acceptance walkthrough.
-- `docs/DEPLOYMENT.md`: Render Static Site setup.
+- `docs/DEPLOYMENT.md`: Render Web Service setup and deployment checks.
 - `docs/DESIGN.md`: visual system and the supplied Imperial Beamer palette.
 - `docs/RESEARCH_NOTES.md`: equations, solver, validation, caveats and provenance.
 - `docs/DEMO_SCRIPT.md`: four-minute presentation script.

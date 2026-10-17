@@ -13,7 +13,7 @@ if baseline.exists():
     shutil.copy2(baseline,downloads/'reference-experiment.json')
     data=json.loads(baseline.read_text(encoding='utf-8'))
     (root/'docs/default-refinement.json').write_text(json.dumps(data.get('refinement',{}),indent=2),encoding='utf-8')
-files=[root/name for name in ['README.md','package.json','launch.py','START_PhaseAtlas.cmd']]
+files=[root/name for name in ['README.md','package.json','launch.py','app.py','requirements.txt','START_PhaseAtlas.cmd']]
 allowed={'.html','.css','.js','.mjs','.py','.txt','.md','.json','.pdf','.png','.svg','.webm'}
 for directory in ['dist','research','tests','docs']:
     for p in (root/directory).rglob('*'):

@@ -28,7 +28,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if requested=='/downloads/phaseatlas-research.zip' and not (ROOT/'dist/downloads/phaseatlas-research.zip').exists():
             stream=io.BytesIO()
             allowed={'.html','.css','.js','.mjs','.py','.txt','.md','.json','.pdf','.png','.svg','.webm'}
-            files=[ROOT/name for name in ['README.md','package.json','launch.py','START_PhaseAtlas.cmd']]
+            files=[ROOT/name for name in ['README.md','package.json','launch.py','app.py','requirements.txt','START_PhaseAtlas.cmd']]
             for directory in ['dist','research','tests','docs']:
                 for p in (ROOT/directory).rglob('*'):
                     if p.is_file() and p.suffix.lower() in allowed and not any(part in ('__pycache__','downloads','screenshots') for part in p.relative_to(ROOT).parts):
