@@ -1,0 +1,120 @@
+{
+  "pageErrors": [],
+  "httpErrors": [],
+  "mobileViewport": {
+    "width": 390,
+    "scrollWidth": 390
+  },
+  "interfaceAudits": [
+    {
+      "name": "laboratory-desktop",
+      "lang": "en",
+      "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+      "chinese": false,
+      "languageSwitch": false,
+      "width": 1440,
+      "scrollWidth": 1440,
+      "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+      "primary": "#0000cd"
+    },
+    {
+      "name": "atlas-desktop",
+      "lang": "en",
+      "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+      "chinese": false,
+      "languageSwitch": false,
+      "width": 1440,
+      "scrollWidth": 1440,
+      "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+      "primary": "#0000cd"
+    },
+    {
+      "name": "verification-desktop",
+      "lang": "en",
+      "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+      "chinese": false,
+      "languageSwitch": false,
+      "width": 1440,
+      "scrollWidth": 1440,
+      "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+      "primary": "#0000cd"
+    },
+    {
+      "name": "evidence-desktop",
+      "lang": "en",
+      "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+      "chinese": false,
+      "languageSwitch": false,
+      "width": 1440,
+      "scrollWidth": 1440,
+      "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+      "primary": "#0000cd"
+    },
+    {
+      "name": "theory-desktop",
+      "lang": "en",
+      "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+      "chinese": false,
+      "languageSwitch": false,
+      "width": 1440,
+      "scrollWidth": 1440,
+      "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+      "primary": "#0000cd"
+    },
+    {
+      "name": "laboratory-mobile",
+      "lang": "en",
+      "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+      "chinese": false,
+      "languageSwitch": false,
+      "width": 390,
+      "scrollWidth": 390,
+      "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+      "primary": "#0000cd"
+    },
+    {
+      "name": "atlas-mobile",
+      "lang": "en",
+      "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+      "chinese": false,
+      "languageSwitch": false,
+      "width": 390,
+      "scrollWidth": 390,
+      "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+      "primary": "#0000cd"
+    },
+    {
+      "name": "verify-mobile",
+      "lang": "en",
+      "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+      "chinese": false,
+      "languageSwitch": false,
+      "width": 390,
+      "scrollWidth": 390,
+      "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+      "primary": "#0000cd"
+    },
+    {
+      "name": "evidence-mobile",
+      "lang": "en",
+      "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+      "chinese": false,
+      "languageSwitch": false,
+      "width": 390,
+      "scrollWidth": 390,
+      "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+      "primary": "#0000cd"
+    },
+    {
+      "name": "theory-mobile",
+      "lang": "en",
+      "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+      "chinese": false,
+      "languageSwitch": false,
+      "width": 390,
+      "scrollWidth": 390,
+      "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+      "primary": "#0000cd"
+    }
+  ]
+}

@@ -1,0 +1,307 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-10-17T10:47:10.786200+00:00",
+  "checks": [
+    {
+      "title": "Numerical and analytic test suite",
+      "passed": true,
+      "detail": "13/13 Node tests passed; source: tests/science.test.mjs"
+    },
+    {
+      "title": "Exact symbolic PDE identities",
+      "passed": true,
+      "detail": "SymPy: cubic, Burgers, KdV–Burgers residuals are identically zero."
+    },
+    {
+      "title": "Temporal and spatial convergence",
+      "passed": true,
+      "detail": "Error-difference ratios: time 3.9601, space 3.9500 (second-order target: 4)."
+    },
+    {
+      "title": "Manufactured clamped boundary problem",
+      "passed": true,
+      "detail": "RMS errors: 7.7443e−5, 1.9398e−5, 4.8479e−6; N=65,129,257."
+    },
+    {
+      "title": "Independent SciPy comparisons",
+      "passed": true,
+      "detail": "Final relative L²: cubic_linear 4.825e-05, cubic_nonlinear 0.0001909, burgers 1.535e-07."
+    },
+    {
+      "title": "Domain extension and linearization",
+      "passed": true,
+      "detail": "Central-window difference <1e−8 for the tested short run; nonlinear/linear difference decreases quadratically with amplitude."
+    },
+    {
+      "title": "Numerical shooting anchor",
+      "passed": true,
+      "detail": "Reference candidate max profile error ≈3.9142e−8 on |ξ|<8. Not a validated existence proof."
+    }
+  ],
+  "testSuite": {
+    "createdAt": "2026-10-17T10:40:10.666Z",
+    "exitCode": 0,
+    "total": 13,
+    "passed": 13,
+    "failed": 0,
+    "output": "TAP version 13\n# Manufactured clamped errors: [\n#   0.0000774430775545938,\n#   0.000019397532658992076,\n#   0.000004847939670726357\n# ]\n# Temporal refinement ratio: 3.960117490272097\n# Spatial refinement ratio: 3.950028789091049\n# Shooting / analytic max error: 3.9141897056893526e-8\n# Subtest: All three exact fronts have independently evaluated analytic PDE residual < 1e-12\nok 1 - All three exact fronts have independently evaluated analytic PDE residual < 1e-12\n  ---\n  duration_ms: 12.118\n  type: 'test'\n  ...\n# Subtest: Wrong speed and dispersive sign are detected\nok 2 - Wrong speed and dispersive sign are detected\n  ---\n  duration_ms: 3.6314\n  type: 'test'\n  ...\n# Subtest: Half-power front is real, monotone, and has the specified phase\nok 3 - Half-power front is real, monotone, and has the specified phase\n  ---\n  duration_ms: 0.5848\n  type: 'test'\n  ...\n# Subtest: Far-field growth rates and weighted bound are correct\nok 4 - Far-field growth rates and weighted bound are correct\n  ---\n  duration_ms: 0.5067\n  type: 'test'\n  ...\n# Subtest: Pentadiagonal LU solves its actual nonsymmetric operator\nok 5 - Pentadiagonal LU solves its actual nonsymmetric operator\n  ---\n  duration_ms: 2.6986\n  type: 'test'\n  ...\n# Subtest: Clamped manufactured boundary problem converges under grid refinement\nok 6 - Clamped manufactured boundary problem converges under grid refinement\n  ---\n  duration_ms: 4.9084\n  type: 'test'\n  ...\n# Subtest: SBDF2 time-step refinement for linear evolution\nok 7 - SBDF2 time-step refinement for linear evolution\n  ---\n  duration_ms: 41.0509\n  type: 'test'\n  ...\n# Subtest: Spatial refinement agrees in the common observation region\nok 8 - Spatial refinement agrees in the common observation region\n  ---\n  duration_ms: 155.0989\n  type: 'test'\n  ...\n# Subtest: Nonlinear solution approaches the linear solution as amplitude shrinks\nok 9 - Nonlinear solution approaches the linear solution as amplitude shrinks\n  ---\n  duration_ms: 72.1011\n  type: 'test'\n  ...\n# Subtest: Central window is insensitive to a wider boundary for a short run\nok 10 - Central window is insensitive to a wider boundary for a short run\n  ---\n  duration_ms: 41.3053\n  type: 'test'\n  ...\n# Subtest: Burgers perturbation is finite and exact KdVB requires no numerical solver\nok 11 - Burgers perturbation is finite and exact KdVB requires no numerical solver\n  ---\n  duration_ms: 20.7211\n  type: 'test'\n  ...\n# Subtest: Input guards reject invalid numerics without arbitrary expression evaluation\nok 12 - Input guards reject invalid numerics without arbitrary expression evaluation\n  ---\n  duration_ms: 0.3762\n  type: 'test'\n  ...\n# Subtest: Baseline backward shooting recovers the analytic front\nok 13 - Baseline backward shooting recovers the analytic front\n  ---\n  duration_ms: 28.0073\n  type: 'test'\n  ...\n1..13\n# tests 13\n# suites 0\n# pass 13\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 596.753\n\n"
+  },
+  "independentReference": {
+    "comparisons": [
+      {
+        "name": "cubic_linear",
+        "relativeL2": 4.8252531009300406e-05,
+        "maxAbs": 1.1811417107202536e-07,
+        "passed": true,
+        "referenceMethod": "SciPy sparse expm_multiply (independent time integrator)"
+      },
+      {
+        "name": "cubic_nonlinear",
+        "relativeL2": 0.00019089221271408646,
+        "maxAbs": 8.16433465614455e-06,
+        "passed": true,
+        "referenceMethod": "SciPy BDF, rtol=2e-9, atol=1e-12"
+      },
+      {
+        "name": "burgers",
+        "relativeL2": 1.5346846722967024e-07,
+        "maxAbs": 2.6231430278779444e-09,
+        "passed": true,
+        "referenceMethod": "SciPy BDF, rtol=2e-9, atol=1e-12"
+      }
+    ],
+    "symbolic": [
+      {
+        "name": "cubic",
+        "exact_residual": "0",
+        "passed": true
+      },
+      {
+        "name": "burgers",
+        "exact_residual": "0",
+        "passed": true
+      },
+      {
+        "name": "kdvb",
+        "exact_residual": "0",
+        "passed": true
+      }
+    ],
+    "numpyVersion": "2.4.6"
+  },
+  "browserSolverSummary": {
+    "version": "0.1.0",
+    "createdAt": "2026-10-17T00:36:15.801Z",
+    "runs": {
+      "cubic_linear": {
+        "steps": 600,
+        "dt": 2.4999999999999998e-05,
+        "initial": {
+          "global": 0.001152970247233598,
+          "local": 0.0008527427487249858,
+          "weighted": 2285.669594752866,
+          "boundary": 1.3424757125897696e-14,
+          "peak": 0.001
+        },
+        "final": {
+          "global": 0.00342145770463796,
+          "local": 0.003359680573599766,
+          "weighted": 625.5744598582303,
+          "boundary": 6.565138031590299e-15,
+          "peak": 0.002474473904364592
+        },
+        "warnings": []
+      },
+      "cubic_nonlinear": {
+        "steps": 2400,
+        "dt": 2.4999999999999998e-05,
+        "initial": {
+          "global": 0.0011529702472336777,
+          "local": 0.0008176661468296144,
+          "weighted": 2286.0624355922764,
+          "boundary": 3.312870388937171e-42,
+          "peak": 0.00099971560911724
+        },
+        "final": {
+          "global": 0.08340654668456092,
+          "local": 0.050059707696123494,
+          "weighted": 107.48315805230222,
+          "boundary": 4.663949058145472e-05,
+          "peak": 0.04131889152332729
+        },
+        "warnings": []
+      },
+      "burgers": {
+        "steps": 1000,
+        "dt": 0.001,
+        "initial": {
+          "global": 0.036366284534507874,
+          "local": 0.03628979396063617,
+          "weighted": 161.62884802831906,
+          "boundary": 6.240690995046642e-62,
+          "peak": 0.029915445777886532
+        },
+        "final": {
+          "global": 0.025230911465215996,
+          "local": 0.025181937925826077,
+          "weighted": 266.5047870962415,
+          "boundary": 9.824317968709215e-44,
+          "peak": 0.018987885410799044
+        },
+        "warnings": []
+      }
+    },
+    "profiles": {
+      "cubic": 3.086420008457935e-14,
+      "burgers": 5.5294310796760726e-17,
+      "kdvb": 7.507883204027621e-15
+    },
+    "continuation": [
+      {
+        "alpha": -20,
+        "beta": -8.5,
+        "ok": true,
+        "tail": 1.0024323973300548e-07
+      },
+      {
+        "alpha": -15,
+        "beta": -6.5,
+        "ok": true,
+        "tail": 1.0055761173172574e-07
+      },
+      {
+        "alpha": -17.75,
+        "beta": -7.5,
+        "ok": true,
+        "tail": 1.003821709476877e-07
+      },
+      {
+        "alpha": -18,
+        "beta": -7.7,
+        "ok": true,
+        "tail": 1.001885311051971e-07
+      }
+    ]
+  },
+  "scope": "Measured checks on selected cases; not an interval proof, universal stability certificate, or continuum error bound.",
+  "browserQA": {
+    "pageErrors": [],
+    "httpErrors": [],
+    "mobileViewport": {
+      "width": 390,
+      "scrollWidth": 390
+    },
+    "interfaceAudits": [
+      {
+        "name": "laboratory-desktop",
+        "lang": "en",
+        "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+        "chinese": false,
+        "languageSwitch": false,
+        "width": 1440,
+        "scrollWidth": 1440,
+        "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+        "primary": "#0000cd"
+      },
+      {
+        "name": "atlas-desktop",
+        "lang": "en",
+        "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+        "chinese": false,
+        "languageSwitch": false,
+        "width": 1440,
+        "scrollWidth": 1440,
+        "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+        "primary": "#0000cd"
+      },
+      {
+        "name": "verification-desktop",
+        "lang": "en",
+        "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+        "chinese": false,
+        "languageSwitch": false,
+        "width": 1440,
+        "scrollWidth": 1440,
+        "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+        "primary": "#0000cd"
+      },
+      {
+        "name": "evidence-desktop",
+        "lang": "en",
+        "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+        "chinese": false,
+        "languageSwitch": false,
+        "width": 1440,
+        "scrollWidth": 1440,
+        "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+        "primary": "#0000cd"
+      },
+      {
+        "name": "theory-desktop",
+        "lang": "en",
+        "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+        "chinese": false,
+        "languageSwitch": false,
+        "width": 1440,
+        "scrollWidth": 1440,
+        "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+        "primary": "#0000cd"
+      },
+      {
+        "name": "laboratory-mobile",
+        "lang": "en",
+        "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+        "chinese": false,
+        "languageSwitch": false,
+        "width": 390,
+        "scrollWidth": 390,
+        "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+        "primary": "#0000cd"
+      },
+      {
+        "name": "atlas-mobile",
+        "lang": "en",
+        "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+        "chinese": false,
+        "languageSwitch": false,
+        "width": 390,
+        "scrollWidth": 390,
+        "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+        "primary": "#0000cd"
+      },
+      {
+        "name": "verify-mobile",
+        "lang": "en",
+        "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+        "chinese": false,
+        "languageSwitch": false,
+        "width": 390,
+        "scrollWidth": 390,
+        "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+        "primary": "#0000cd"
+      },
+      {
+        "name": "evidence-mobile",
+        "lang": "en",
+        "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+        "chinese": false,
+        "languageSwitch": false,
+        "width": 390,
+        "scrollWidth": 390,
+        "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+        "primary": "#0000cd"
+      },
+      {
+        "name": "theory-mobile",
+        "lang": "en",
+        "title": "PhaseAtlas · Nonlinear Wave Laboratory",
+        "chinese": false,
+        "languageSwitch": false,
+        "width": 390,
+        "scrollWidth": 390,
+        "brand": "PhaseAtlasNONLINEAR WAVE LAB",
+        "primary": "#0000cd"
+      }
+    ]
+  }
+}

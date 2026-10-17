@@ -1,0 +1,10 @@
+import {spawnSync} from 'node:child_process';
+import fs from 'node:fs';
+const r=spawnSync(process.execPath,['--test','--test-reporter=tap','tests/science.test.mjs'],{encoding:'utf8'});
+fs.mkdirSync('research/validation',{recursive:true});
+const output=r.stdout+'\n'+r.stderr;
+const count=key=>Number(output.match(new RegExp(`# ${key} (\\d+)`))?.[1]||0);
+const report={createdAt:new Date().toISOString(),exitCode:r.status,total:count('tests'),passed:count('pass'),failed:count('fail'),output};
+fs.writeFileSync('research/validation/science-test-report.json',JSON.stringify(report,null,2));
+console.log(output);
+process.exitCode=r.status||0;

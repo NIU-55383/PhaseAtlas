@@ -1,0 +1,10 @@
+{
+  "coarseN": 2049,
+  "fineN": 4097,
+  "coarseDt": 2.4999999999999998e-05,
+  "fineDt": 1.2499999999999999e-05,
+  "T": 0.06,
+  "relativeL2": 0.011332441330534812,
+  "maxAbs": 0.0004737236292399415,
+  "scope": "One joint grid/time refinement comparison at final time; not an error bound or an observed convergence order."
+}
