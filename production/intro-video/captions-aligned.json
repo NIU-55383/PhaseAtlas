@@ -1,0 +1,332 @@
+[
+  {
+    "scene": "intro",
+    "start": 0.27,
+    "end": 4.106,
+    "text": "A partial differential equation can produce a beautiful animation."
+  },
+  {
+    "scene": "intro",
+    "start": 4.11,
+    "end": 6.795,
+    "text": "But what makes that picture useful for research?"
+  },
+  {
+    "scene": "intro",
+    "start": 6.99,
+    "end": 10.742,
+    "text": "We need to see the model, check the calculation, and keep the evidence."
+  },
+  {
+    "scene": "intro",
+    "start": 11.05,
+    "end": 15.773,
+    "text": "This is PhaseAtlas: a visual workbench that connects those steps."
+  },
+  {
+    "scene": "studio",
+    "start": 17.27,
+    "end": 20.457,
+    "text": "Start with an equation and the question you want to investigate."
+  },
+  {
+    "scene": "studio",
+    "start": 20.59,
+    "end": 25.212,
+    "text": "In the Studio, researchers can edit the model, initial data, and boundary conditions."
+  },
+  {
+    "scene": "studio",
+    "start": 25.77,
+    "end": 29.683,
+    "text": "Supported models include coupled evolution equations and fourth-order problems."
+  },
+  {
+    "scene": "studio",
+    "start": 29.83,
+    "end": 35.245,
+    "text": "The numerical method and its limits stay visible, so users can choose an appropriate experiment."
+  },
+  {
+    "scene": "cooling",
+    "start": 36.27,
+    "end": 39.76,
+    "text": "Here is a practical example: a hot rod losing heat through its ends."
+  },
+  {
+    "scene": "cooling",
+    "start": 39.79,
+    "end": 42.72,
+    "text": "The Robin boundary condition models exchange with the surroundings."
+  },
+  {
+    "scene": "cooling",
+    "start": 42.93,
+    "end": 45.87,
+    "text": "Watch the temperature fall, while the centre remains warmer than the edges."
+  },
+  {
+    "scene": "cooling",
+    "start": 45.87,
+    "end": 48.015,
+    "text": "Every frame comes from a numerical solution."
+  },
+  {
+    "scene": "cooling",
+    "start": 48.11,
+    "end": 50.69,
+    "text": "We can measure the mean temperature or follow a local probe."
+  },
+  {
+    "scene": "cooling",
+    "start": 50.69,
+    "end": 53.487,
+    "text": "This dimensionless example helps explore heat transfer;"
+  },
+  {
+    "scene": "cooling",
+    "start": 53.53,
+    "end": 57.085,
+    "text": "a prediction for a specific material would also require calibration."
+  },
+  {
+    "scene": "verification",
+    "start": 58.27,
+    "end": 60.785,
+    "text": "A convincing animation is only the first step."
+  },
+  {
+    "scene": "verification",
+    "start": 60.85,
+    "end": 64.759,
+    "text": "We test the boundary implementation against a heat-equation solution that is known exactly."
+  },
+  {
+    "scene": "verification",
+    "start": 64.83,
+    "end": 68.53,
+    "text": "Keeping the time step fixed, we refine the grid from sixteen to thirty-two to sixty-four"
+  },
+  {
+    "scene": "verification",
+    "start": 68.53,
+    "end": 72.357,
+    "text": "cells. The errors decrease, with an observed spatial order close to two."
+  },
+  {
+    "scene": "verification",
+    "start": 72.43,
+    "end": 77.11,
+    "text": "A separate balance diagnostic compares the change in thermal content with the recorded heat input"
+  },
+  {
+    "scene": "verification",
+    "start": 77.11,
+    "end": 78.464,
+    "text": "through the boundaries."
+  },
+  {
+    "scene": "scan",
+    "start": 79.27,
+    "end": 81.346,
+    "text": "Next, compare a family of experiments."
+  },
+  {
+    "scene": "scan",
+    "start": 81.53,
+    "end": 84.99,
+    "text": "This map asks how much heat remains after a fixed time, as diffusion and boundary"
+  },
+  {
+    "scene": "scan",
+    "start": 84.99,
+    "end": 90.18,
+    "text": "exchange change. Every cell represents a completed numerical trajectory that can be replayed."
+  },
+  {
+    "scene": "scan",
+    "start": 90.35,
+    "end": 92.497,
+    "text": "Researchers can select their own observables."
+  },
+  {
+    "scene": "scan",
+    "start": 92.69,
+    "end": 97.33,
+    "text": "Failed runs and unobserved threshold events remain explicit, so the map does not silently hide"
+  },
+  {
+    "scene": "scan",
+    "start": 97.33,
+    "end": 98.807,
+    "text": "missing evidence."
+  },
+  {
+    "scene": "front",
+    "start": 100.27,
+    "end": 105.254,
+    "text": "The platform also connects to my earlier research on a fourth-order travelling front."
+  },
+  {
+    "scene": "front",
+    "start": 105.29,
+    "end": 109.475,
+    "text": "Here, we follow a small disturbance in a frame moving with the wave."
+  },
+  {
+    "scene": "front",
+    "start": 110.05,
+    "end": 114.072,
+    "text": "Global, local, and weighted norms reveal different aspects of its evolution."
+  },
+  {
+    "scene": "front",
+    "start": 114.81,
+    "end": 121.01,
+    "text": "The Studio supports two custom linear boundary conditions at each end for supported one-dimensional fourth-order"
+  },
+  {
+    "scene": "front",
+    "start": 121.01,
+    "end": 125.766,
+    "text": "equations. These tools help formulate and test research questions."
+  },
+  {
+    "scene": "front",
+    "start": 125.99,
+    "end": 130.193,
+    "text": "A simulation alone does not prove nonlinear stability."
+  },
+  {
+    "scene": "reuse",
+    "start": 131.27,
+    "end": 133.161,
+    "text": "The result is more than an animation."
+  },
+  {
+    "scene": "reuse",
+    "start": 133.63,
+    "end": 138.814,
+    "text": "Researchers can export the model, parameters, trajectories, and numerical checks, alongside figures and video."
+  },
+  {
+    "scene": "reuse",
+    "start": 139.25,
+    "end": 142.464,
+    "text": "Selected problems can be compared with an independent Python implementation."
+  },
+  {
+    "scene": "reuse",
+    "start": 142.77,
+    "end": 144.917,
+    "text": "Computation runs on the user's device."
+  },
+  {
+    "scene": "reuse",
+    "start": 144.93,
+    "end": 149.13,
+    "text": "That makes the workflow accessible for exploring a model, checking an idea, and sharing a"
+  },
+  {
+    "scene": "reuse",
+    "start": 149.13,
+    "end": 151.091,
+    "text": "reproducible calculation."
+  },
+  {
+    "scene": "demo",
+    "start": 152.27,
+    "end": 154.09,
+    "text": "Here is the workflow in the live Studio."
+  },
+  {
+    "scene": "demo",
+    "start": 154.25,
+    "end": 157.244,
+    "text": "Start from a heat-transfer model, then edit the equation and its parameters."
+  },
+  {
+    "scene": "demo",
+    "start": 157.39,
+    "end": 160.07,
+    "text": "Type the spatial derivatives directly into the equation box."
+  },
+  {
+    "scene": "demo",
+    "start": 163.17,
+    "end": 166.71,
+    "text": "I will use diffusion on a one-dimensional rod, with heat exchange at both ends."
+  },
+  {
+    "scene": "demo",
+    "start": 166.73,
+    "end": 170.07,
+    "text": "Each boundary has its own coefficients, so we can change the environment without rewriting the"
+  },
+  {
+    "scene": "demo",
+    "start": 170.07,
+    "end": 173.385,
+    "text": "solver. The left and right ends can also use different boundary data."
+  },
+  {
+    "scene": "demo",
+    "start": 177.09,
+    "end": 181.19,
+    "text": "Now run the experiment. Play the saved solution, pause it, or scrub through time to"
+  },
+  {
+    "scene": "demo",
+    "start": 181.19,
+    "end": 188.658,
+    "text": "inspect a particular frame. Then choose Check resolution."
+  },
+  {
+    "scene": "demo",
+    "start": 188.89,
+    "end": 191.97,
+    "text": "The platform reruns the model with a smaller time step and a finer grid, and"
+  },
+  {
+    "scene": "demo",
+    "start": 191.97,
+    "end": 195.602,
+    "text": "reports the differences. This comparison is something we can actually check."
+  },
+  {
+    "scene": "demo",
+    "start": 198.25,
+    "end": 200.485,
+    "text": "Finally, export the experiment as JSON."
+  },
+  {
+    "scene": "demo",
+    "start": 200.63,
+    "end": 204.83,
+    "text": "It includes the configuration, the saved fields, and the numerical checks, so another researcher can"
+  },
+  {
+    "scene": "demo",
+    "start": 204.83,
+    "end": 207.099,
+    "text": "inspect and reproduce the calculation."
+  },
+  {
+    "scene": "outro",
+    "start": 212.27,
+    "end": 217.71,
+    "text": "The longer-term goal is a research platform that helps people ask better mathematical questions and"
+  },
+  {
+    "scene": "outro",
+    "start": 217.71,
+    "end": 222.377,
+    "text": "inspect the evidence together. I am Niu Te from Imperial College London."
+  },
+  {
+    "scene": "outro",
+    "start": 222.67,
+    "end": 224.929,
+    "text": "This is PhaseAtlas."
+  }
+]

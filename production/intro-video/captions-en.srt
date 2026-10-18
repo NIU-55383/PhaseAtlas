@@ -1,0 +1,219 @@
+1
+00:00:00,270 --> 00:00:04,106
+A partial differential equation can produce a beautiful animation.
+
+2
+00:00:04,110 --> 00:00:06,795
+But what makes that picture useful for research?
+
+3
+00:00:06,990 --> 00:00:10,742
+We need to see the model, check the calculation, and keep the evidence.
+
+4
+00:00:11,050 --> 00:00:15,773
+This is PhaseAtlas: a visual workbench that connects those steps.
+
+5
+00:00:17,270 --> 00:00:20,457
+Start with an equation and the question you want to investigate.
+
+6
+00:00:20,590 --> 00:00:25,212
+In the Studio, researchers can edit the model, initial data, and boundary conditions.
+
+7
+00:00:25,770 --> 00:00:29,683
+Supported models include coupled evolution equations and fourth-order problems.
+
+8
+00:00:29,830 --> 00:00:35,245
+The numerical method and its limits stay visible, so users can choose an appropriate experiment.
+
+9
+00:00:36,270 --> 00:00:39,760
+Here is a practical example: a hot rod losing heat through its ends.
+
+10
+00:00:39,790 --> 00:00:42,720
+The Robin boundary condition models exchange with the surroundings.
+
+11
+00:00:42,930 --> 00:00:45,870
+Watch the temperature fall, while the centre remains warmer than the edges.
+
+12
+00:00:45,870 --> 00:00:48,015
+Every frame comes from a numerical solution.
+
+13
+00:00:48,110 --> 00:00:50,690
+We can measure the mean temperature or follow a local probe.
+
+14
+00:00:50,690 --> 00:00:53,487
+This dimensionless example helps explore heat transfer;
+
+15
+00:00:53,530 --> 00:00:57,085
+a prediction for a specific material would also require calibration.
+
+16
+00:00:58,270 --> 00:01:00,785
+A convincing animation is only the first step.
+
+17
+00:01:00,850 --> 00:01:04,759
+We test the boundary implementation against a heat-equation solution that is known exactly.
+
+18
+00:01:04,830 --> 00:01:08,530
+Keeping the time step fixed, we refine the grid from sixteen to thirty-two to sixty-four
+
+19
+00:01:08,530 --> 00:01:12,357
+cells. The errors decrease, with an observed spatial order close to two.
+
+20
+00:01:12,430 --> 00:01:17,110
+A separate balance diagnostic compares the change in thermal content with the recorded heat input
+
+21
+00:01:17,110 --> 00:01:18,464
+through the boundaries.
+
+22
+00:01:19,270 --> 00:01:21,346
+Next, compare a family of experiments.
+
+23
+00:01:21,530 --> 00:01:24,990
+This map asks how much heat remains after a fixed time, as diffusion and boundary
+
+24
+00:01:24,990 --> 00:01:30,180
+exchange change. Every cell represents a completed numerical trajectory that can be replayed.
+
+25
+00:01:30,350 --> 00:01:32,497
+Researchers can select their own observables.
+
+26
+00:01:32,690 --> 00:01:37,330
+Failed runs and unobserved threshold events remain explicit, so the map does not silently hide
+
+27
+00:01:37,330 --> 00:01:38,807
+missing evidence.
+
+28
+00:01:40,270 --> 00:01:45,254
+The platform also connects to my earlier research on a fourth-order travelling front.
+
+29
+00:01:45,290 --> 00:01:49,475
+Here, we follow a small disturbance in a frame moving with the wave.
+
+30
+00:01:50,050 --> 00:01:54,072
+Global, local, and weighted norms reveal different aspects of its evolution.
+
+31
+00:01:54,810 --> 00:02:01,010
+The Studio supports two custom linear boundary conditions at each end for supported one-dimensional fourth-order
+
+32
+00:02:01,010 --> 00:02:05,766
+equations. These tools help formulate and test research questions.
+
+33
+00:02:05,990 --> 00:02:10,193
+A simulation alone does not prove nonlinear stability.
+
+34
+00:02:11,270 --> 00:02:13,161
+The result is more than an animation.
+
+35
+00:02:13,630 --> 00:02:18,814
+Researchers can export the model, parameters, trajectories, and numerical checks, alongside figures and video.
+
+36
+00:02:19,250 --> 00:02:22,464
+Selected problems can be compared with an independent Python implementation.
+
+37
+00:02:22,770 --> 00:02:24,917
+Computation runs on the user's device.
+
+38
+00:02:24,930 --> 00:02:29,130
+That makes the workflow accessible for exploring a model, checking an idea, and sharing a
+
+39
+00:02:29,130 --> 00:02:31,091
+reproducible calculation.
+
+40
+00:02:32,270 --> 00:02:34,090
+Here is the workflow in the live Studio.
+
+41
+00:02:34,250 --> 00:02:37,244
+Start from a heat-transfer model, then edit the equation and its parameters.
+
+42
+00:02:37,390 --> 00:02:40,070
+Type the spatial derivatives directly into the equation box.
+
+43
+00:02:43,170 --> 00:02:46,710
+I will use diffusion on a one-dimensional rod, with heat exchange at both ends.
+
+44
+00:02:46,730 --> 00:02:50,070
+Each boundary has its own coefficients, so we can change the environment without rewriting the
+
+45
+00:02:50,070 --> 00:02:53,385
+solver. The left and right ends can also use different boundary data.
+
+46
+00:02:57,090 --> 00:03:01,190
+Now run the experiment. Play the saved solution, pause it, or scrub through time to
+
+47
+00:03:01,190 --> 00:03:08,658
+inspect a particular frame. Then choose Check resolution.
+
+48
+00:03:08,890 --> 00:03:11,970
+The platform reruns the model with a smaller time step and a finer grid, and
+
+49
+00:03:11,970 --> 00:03:15,602
+reports the differences. This comparison is something we can actually check.
+
+50
+00:03:18,250 --> 00:03:20,485
+Finally, export the experiment as JSON.
+
+51
+00:03:20,630 --> 00:03:24,830
+It includes the configuration, the saved fields, and the numerical checks, so another researcher can
+
+52
+00:03:24,830 --> 00:03:27,099
+inspect and reproduce the calculation.
+
+53
+00:03:32,270 --> 00:03:37,710
+The longer-term goal is a research platform that helps people ask better mathematical questions and
+
+54
+00:03:37,710 --> 00:03:42,377
+inspect the evidence together. I am Niu Te from Imperial College London.
+
+55
+00:03:42,670 --> 00:03:44,929
+This is PhaseAtlas.

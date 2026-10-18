@@ -1,3 +1,4 @@
+import {createSpaceTimeSurface} from './spacetime-surface.mjs';
 import {PRESETS, presetConfig} from './studio-presets.js';
 import {prepare, makeGrid, validateConfig} from './studio-solver.js';
 import {parseParameters, parseExpression, evaluate} from './studio-expression.js';
@@ -16,6 +17,7 @@ function status(text, error = false) { $('studio-status').textContent = text; $(
 function pause() { playing = false; cancelAnimationFrame(animation); $('studio-play').textContent = '▶'; $('studio-play').setAttribute('aria-label', 'Play animation'); }
 function play() {
   if (!result) return;
+  spaceTime.pause();
   playing = true; $('studio-play').textContent = 'Ⅱ'; $('studio-play').setAttribute('aria-label', 'Pause animation'); lastTick = 0;
   function tick(now) {
     if (!playing) return;
@@ -23,6 +25,14 @@ function play() {
     animation = requestAnimationFrame(tick);
   }
   animation = requestAnimationFrame(tick);
+}
+
+const spaceTime = createSpaceTimeSurface(document.querySelector('.studio-chart-row'), {id:'studio-spacetime',onFrame(index){pause();frame=index;renderFrame();}});
+function refreshSurface(){
+  if(!result)return;
+  const c=result.config;
+  spaceTime.setData({config:c,frames:result.frames,rows:result.frames.map(s=>s.values[field]),label:c.fields[field].name,
+    references:c.dimension===1&&referenceAsts[field]?result.frames.map((_,i)=>reference(result,i,field)):null});
 }
 
 function editorFields(count, values = []) {
@@ -107,7 +117,7 @@ function setBusy(value) {
   if (value) $('studio-progress').value = 0;
 }
 function startWorker(action, payload) {
-  pause(); worker?.terminate(); setBusy(true); $('result-state').textContent = action === 'run' ? 'Computing' : 'Checking';
+  pause(); spaceTime.pause(); worker?.terminate(); setBusy(true); $('result-state').textContent = action === 'run' ? 'Computing' : 'Checking';
   worker = new Worker(new URL('./studio-worker.js', import.meta.url), {type: 'module'});
   const fail = message => { worker?.terminate(); worker = null; setBusy(false); status(message + (result ? ' Previous successful results are retained.' : ''), true); $('result-state').textContent = 'Needs attention'; };
   worker.onerror = e => { e.preventDefault(); fail(e.message || 'The computation worker could not start.'); };
@@ -151,7 +161,7 @@ function acceptResult(next) {
   exportButtons.forEach(id => { $(id).disabled = false; }); $('refine-studio').disabled = false;
   $('share-link-box').classList.add('hidden');
   status(`Completed · ${result.steps} steps · Δt=${fmt(result.dt)} · ${(result.elapsedMs/1000).toFixed(2)} s. Resolution has not yet been checked.`);
-  renderAll();
+  refreshSurface();renderAll();
   try { localStorage.setItem('phaseatlas-studio-last', JSON.stringify(c)); } catch {}
 }
 
@@ -231,6 +241,7 @@ function renderFrame() {
   $('field-subtitle').textContent=c.dimension===2?'Color scale fixed across the entire run':referenceAsts[field]?'Solid: computed · dashed: supplied reference · fixed vertical scale':'Fixed vertical scale across the entire run';
   $('field-colorbar').classList.toggle('hidden',c.dimension!==2);$('field-low').textContent=fmt(ranges[field][0]);$('field-high').textContent=fmt(ranges[field][1]);
   const {ctx,width,height}=canvas('studio-field');paintField(ctx,width,height,result,frame,field);
+  spaceTime.setFrame(frame);
   if(document.querySelector('.resolution-card details').open)renderSpectrum();
 }
 function renderHistory() {
@@ -337,9 +348,9 @@ document.querySelector('.studio-editor').addEventListener('input',changed);
 $('run-studio').onclick=run;
 $('cancel-studio').onclick=()=>{worker?.terminate();worker=null;setBusy(false);status('Canceled. The previous successful result is retained.');$('result-state').textContent='Canceled';};
 $('refine-studio').onclick=()=>{if(!result)return;try{prepare({...result.config,N:result.config.N*2,dt:result.dt/2,frames:2});status('Comparing time-step and spatial resolution…');startWorker('refine',{result});}catch(e){status('Refinement could not start: '+e.message+' Run a smaller base grid or shorter duration.',true);}};
-$('display-field').onchange=()=>{field=Number($('display-field').value);renderAll();};
-$('studio-play').onclick=()=>playing?pause():play();$('studio-rewind').onclick=()=>{pause();frame=0;renderFrame();};
-$('studio-timeline').oninput=()=>{pause();frame=Number($('studio-timeline').value);renderFrame();};
+$('display-field').onchange=()=>{field=Number($('display-field').value);refreshSurface();renderAll();};
+$('studio-play').onclick=()=>playing?pause():play();$('studio-rewind').onclick=()=>{spaceTime.pause();pause();frame=0;renderFrame();};
+$('studio-timeline').oninput=()=>{spaceTime.pause();pause();frame=Number($('studio-timeline').value);renderFrame();};
 document.querySelector('.resolution-card details').addEventListener('toggle',()=>{if(result&&document.querySelector('.resolution-card details').open)renderSpectrum();});
 $('export-studio-json').onclick=exportJSON;$('export-studio-csv').onclick=exportCSV;$('export-studio-figure').onclick=()=>result&&download('phaseatlas-custom-figure.svg',svgFigure(),'image/svg+xml');$('export-studio-video').onclick=recordVideo;$('export-studio-config').onclick=shareLink;
 $('import-studio').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if(file.size>80000000)throw Error('Experiment JSON exceeds 80 MB.');const input=JSON.parse(await file.text()),config=prepare(input.config||input).config;applyConfig(config);$('preset-description').textContent='Imported configuration. The result will be recomputed on this device.';run();}catch(error){status(error.message,true);}finally{e.target.value='';}};

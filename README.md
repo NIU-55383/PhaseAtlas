@@ -83,3 +83,11 @@ This generates four groups of PNG, SVG and PDF figures. `04_reference_dispersion
 This is a specialized research workbench, not a general-purpose PDE solver. Numerical observations are not rigorous existence or nonlinear stability proofs. The exact front is prior mathematical structure; the new deliverable is the integrated software and reproducibility workflow. A future Nonlinearity paper must establish a new mathematical result independently of the quality of the interface.
 
 The interface makes no external LLM requests. Development was AI-assisted; calculations are deterministic numerical and symbolic procedures. No API key is required. No experimental calibration or engineering performance is claimed. License selection and any public source release remain with the project owner.
+
+## 3D space-time surfaces
+
+After a 1D run, **PDE Studio** and **Research Workbench** show an **x–t–amplitude** surface below the existing plots. It supports pointer rotation, keyboard rotation/tilt, zoom, an independent saved-frame player synchronized with the original view, progressive reveal, and a 2400 × 1600 PNG export. Select a field in Studio or apply an observation expression in Workbench; the surface follows that selection. Height can show the field/observation or its pointwise change from the first saved frame. Studio also offers signed difference from a supplied reference formula, when present. This comparison is not automatically an error against an exact solution.
+
+The axes use actual saved times and the solver's coordinates (periodic nodes or bounded cell centers). Display mesh sampling is capped at 113 spatial points and 73 saved times, includes the first/last samples, and never changes trajectories, JSON/CSV exports, or refinement checks. All saved values determine a fixed vertical/color scale; difference views use a symmetric scale. The periodic seam is not duplicated and bounded face values are not reconstructed. A dark overlaid curve marks the selected frame. 2D spatial models keep their existing x–y field/surface views.
+
+For the original research example, choose **MAE03 · 3/2-power travelling front**, run, then scroll to **3D space-time surface**. The perturbed MAE03 preset also supports a signed reference-difference surface.

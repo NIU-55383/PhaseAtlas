@@ -10,3 +10,5 @@ docs/screenshots/
 .venv/
 .env
 .openai/
+/production/intro-video/private/
+/production/intro-video/output/

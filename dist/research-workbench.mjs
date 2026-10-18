@@ -1,3 +1,4 @@
+import {createSpaceTimeSurface} from './spacetime-surface.mjs';
 import {PRESETS,presetConfig} from './studio-presets.js';
 import {prepare} from './studio-solver.js';
 import {parseParameters} from './studio-expression.js';
@@ -13,6 +14,7 @@ let model,plan=null,selectedId=null,busy=false,activeWorker=null,cancelWorker=nu
 let frame=0,playing=false,lastTick=0,observed=null,viewExpression='u',vectorObservers=null,range=[0,1],fieldRect=null,atlasRect=null,waves=null,resolution=null,history=null;
 let balance=null,mapSettings={kind:'observable',expression:'u',statistic:'rms',reduction:'final'},mapComputing=false;
 const selected=()=>plan?.jobs.find(j=>j.id===selectedId),experiment=()=>selected()?.result;
+const spaceTime=createSpaceTimeSurface($('field').closest('section'),{id:'workbench-spacetime',onFrame(index){pause();frame=index;drawFrame();}});
 function status(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error);}
 function pause(){playing=false;$('play').textContent='Play';}
 function download(name,payload){const url=URL.createObjectURL(new Blob([JSON.stringify(payload)],{type:'application/json'}));const a=node('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -107,7 +109,7 @@ async function executeQueue(){
     status(`Study finished: ${completed} completed, ${failed} failed. ${plan.interpretation}`,failed>0);
   }finally{if(token===queueToken)setBusy(false);}
 }
-function resetViews(){pause();selectedId=null;observed=null;vectorObservers=null;waves=null;history=null;balance=null;frame=0;fieldRect=null;for(const id of ['play','timeline','export-run','analyze-wave','audit-balance'])$(id).disabled=true;$('time').textContent='No trajectory';drawAll();}
+function resetViews(){pause();spaceTime.setData(null);selectedId=null;observed=null;vectorObservers=null;waves=null;history=null;balance=null;frame=0;fieldRect=null;for(const id of ['play','timeline','export-run','analyze-wave','audit-balance'])$(id).disabled=true;$('time').textContent='No trajectory';drawAll();}
 async function startStudy(){
   const options={xParameter:$('x-param').value,yParameter:$('y-param').value,xMin:num('xmin'),xMax:num('xmax'),xCount:num('xcount'),yMin:num('ymin'),yMax:num('ymax'),yCount:num('ycount')};
   const next=buildPlan(readModel(),$('kind').value,options);mapSettings=readMapSettings();plan=next;resetViews();$('progress').value=0;renderResolution();updateRecords();await executeQueue();
@@ -127,13 +129,15 @@ function applyObservation(){
   const vx=$('vector-x').value.trim(),vy=$('vector-y').value.trim();let vectors=null;
   if(vx||vy){if(!vx||!vy||e.config.dimension!==2)throw Error('Vector fields require both expressions and a 2D model.');vectors=[makeObserver(e,vx),makeObserver(e,vy)];vectors.forEach(v=>v(e.frames[frame]));}
   observed=arrays;viewExpression=source;vectorObservers=vectors;range=[Infinity,-Infinity];for(const values of arrays){const s=statistics(values);range[0]=Math.min(range[0],s.min);range[1]=Math.max(range[1],s.max);}
-  selected().observation={expression:source,vectorX:vx,vectorY:vy};drawFrame();measure();
+  selected().observation={expression:source,vectorX:vx,vectorY:vy};
+  spaceTime.setData({config:e.config,frames:e.frames,rows:arrays,label:source});drawFrame();measure();
 }
 function drawFrame(){
   const e=experiment();if(!e||!observed){drawLines($('field'),[],{height:360});return;}
   const values=observed[frame],s=statistics(values),fixed=$('scale').value==='fixed',vectors=vectorObservers?.map(v=>v(e.frames[frame]));
   fieldRect=drawField($('field'),e.config,values,fixed?range:[s.min,s.max],{expression:viewExpression,palette:$('palette').value,view:$('view').value,angle:num('angle'),contours:$('contours').checked,vectors});
   selected().presentation={frame,expression:viewExpression,view:$('view').value,palette:$('palette').value,scale:$('scale').value,angle:num('angle'),contours:$('contours').checked,range:fixed?range:[s.min,s.max]};
+  spaceTime.setFrame(frame);
   $('timeline').value=frame;$('time').textContent=`t=${fmt(e.frames[frame].t)} / ${fmt(e.config.T)}`;
   $('view-note').textContent=`${viewExpression}; ${fixed?'fixed scale across saved frames':'current-frame scale (colors can change between frames)'}. Playback steps through saved frames. ${e.config.dimension===1?'Line connects grid samples; endpoint boundary traces are available in Studio.':'Plane pixels show samples on the numerical grid.'}`;
 }
@@ -245,7 +249,7 @@ $('kind').onchange=kindChanged;$('run').onclick=attempt(startStudy);$('resume').
 $('cancel').onclick=()=>{++queueToken;const job=plan?.jobs.find(j=>j.status==='running');if(job){job.status='canceled';job.error='Canceled by user.';}cancelWorker?.();setBusy(false);renderResolution();updateRecords();status('Study canceled. Completed runs are retained; resume continues pending and canceled jobs.');};
 $('selected').onchange=attempt(()=>selectRun(num('selected')));$('apply-view').onclick=attempt(applyObservation);$('measure').onclick=attempt(measure);
 for(const id of ['view','palette','scale','contours','angle'])$(id).oninput=attempt(drawFrame);
-$('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'Pause':'Play';};$('timeline').oninput=attempt(()=>{pause();frame=num('timeline');drawFrame();});
+$('play').onclick=()=>{spaceTime.pause();playing=!playing;$('play').textContent=playing?'Pause':'Play';};$('timeline').oninput=attempt(()=>{spaceTime.pause();pause();frame=num('timeline');drawFrame();});
 $('analyze-wave').onclick=attempt(analyzeWave);$('motion').onchange=drawWaves;$('wave-log').onchange=drawWaves;
 $('map-stat').onchange=attempt(applyMap);$('map-apply').onclick=attempt(applyMap);$('map-display').onchange=renderMap;$('audit-balance').onclick=attempt(auditSelected);$('atlas').onclick=attempt(selectAtlas);$('field').onclick=attempt(seedAt);$('seed-enable').onchange=()=>{$('field').classList.toggle('seed-active',$('seed-enable').checked);};
 $('map-csv').onclick=()=>{const sensitivity=sensitivityEstimate(plan,mapMetric);downloadCSV('phaseatlas-parameter-metrics.csv',['run_id','status','x_parameter','x_value','y_parameter','y_value','metric','value','sensitivity_x','sensitivity_y','missing_reason','solver_version','metric_settings'],plan.jobs.map(j=>{const m=mapMetric(j),s=sensitivity.find(s=>s.id===j.id);return [j.id,j.status,plan.options.xParameter,j.coordinates.x,plan.options.yParameter,j.coordinates.y,m?.definition||JSON.stringify(mapSettings),m?.value,s?.x,s?.y,m?.reason||j.error||'',j.result?.solverVersion,JSON.stringify(mapSettings)];}));};
