@@ -1,6 +1,14 @@
 # PhaseAtlas
 
-A browser-based nonlinear wave laboratory connecting exact fronts, numerical evolution, visual diagnostics, and reproducible evidence.
+A browser-based PDE research workspace connecting custom equations, exact fronts, numerical evolution, visual diagnostics, and reproducible evidence.
+
+## Custom PDE Studio
+
+Open `studio.html` through the local server, or select **Custom PDE studio** in the navigation. Write one to three coupled evolution equations in 1D or 2D, set parameters and initial data, and inspect fixed-scale animations, space-time diagrams, Fourier content, means and RMS amplitudes. Nine editable presets cover diffusion, nonlinear waves and phase/reaction dynamics.
+
+The studio supports periodic domains and spatial derivatives through order four. It uses a restricted mathematical parser, Fourier discretization and ETDRK4 in a cancellable Web Worker. It is not a solver for arbitrary PDEs, geometries or boundary conditions. The original wave-front results remain model-specific.
+
+Use **Check resolution** for separate time-step and spatial comparisons. Optional reference functions support trajectory comparisons and sampled PDE residual checks. Export complete JSON/CSV data, vector SVG figures, WebM animations or a configuration link. `research/studio_reference.py` provides independent small-grid checks with NumPy and SciPy. Read `docs/CUSTOM_PDE_STUDIO.md` for syntax, admissible models, benchmarks and limitations.
 
 ## Start
 

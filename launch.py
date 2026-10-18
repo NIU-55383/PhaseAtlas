@@ -17,6 +17,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         # Portable source archives omit duplicate download assets. Serve the
         # corresponding documentation from the same local project when needed.
         requested=urlparse(path).path
+        if requested=='/downloads/studio_reference.py' and not Path(resolved).exists():
+            return str(ROOT/'research/studio_reference.py')
         if requested.startswith('/downloads/') and not Path(resolved).exists():
             name=requested.removeprefix('/downloads/')
             if '/' not in name and '\\' not in name and (ROOT/'docs'/name).is_file():

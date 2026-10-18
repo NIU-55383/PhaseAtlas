@@ -26,7 +26,7 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(response.data, b"")
 
     def test_worker_modules_have_javascript_mime(self):
-        for url in ("/app.js", "/worker.js", "/science.js", "/refinement.js"):
+        for url in ("/app.js", "/worker.js", "/science.js", "/refinement.js", "/studio.js", "/studio-worker.js", "/studio-solver.js", "/studio-expression.js", "/studio-presets.js"):
             with self.subTest(url=url), self.client.get(url) as response:
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.mimetype, "text/javascript")
@@ -42,7 +42,7 @@ class ServerTests(unittest.TestCase):
                 self.assertEqual(response.status_code, 503)
 
     def test_downloads_and_video_range_requests(self):
-        for url in ("/downloads/phaseatlas-research.zip", "/downloads/PhaseAtlas_Project_Brief.pdf", "/data/verification.json"):
+        for url in ("/studio.html", "/studio.css", "/downloads/studio_reference.py", "/downloads/phaseatlas-research.zip", "/downloads/PhaseAtlas_Project_Brief.pdf", "/data/verification.json"):
             with self.subTest(url=url), self.client.get(url) as response:
                 self.assertEqual(response.status_code, 200)
                 self.assertGreater(len(response.data), 100)
@@ -52,7 +52,7 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(len(response.data), 16)
 
     def test_repository_files_and_traversal_are_not_served(self):
-        for url in ("/app.py", "/requirements.txt", "/.git/config", "/.archive/migration-manifest.json", "/../README.md", "/%2e%2e/README.md", "/%2e%2e%5cREADME.md", "/missing-file.js"):
+        for url in ("/app.py", "/requirements.txt", "/.git/config", "/.openai/hosting.json", "/.archive/migration-manifest.json", "/../README.md", "/%2e%2e/README.md", "/%2e%2e%5cREADME.md", "/missing-file.js"):
             with self.subTest(url=url), self.client.get(url) as response:
                 self.assertEqual(response.status_code, 404)
 

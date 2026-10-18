@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0000CD">
+  <meta name="description" content="Write a PDE, explore its dynamics in one or two dimensions, check numerical resolution, and export reproducible experiments.">
+  <title>PhaseAtlas · Custom PDE Studio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%230000cd'/%3E%3Cpath d='M4 29C21 29 15 11 36 11M4 34C21 34 15 16 36 16' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="studio.css">
+  <script type="module" src="studio.js"></script>
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="index.html" aria-label="PhaseAtlas home"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M4 29C21 29 15 11 36 11M4 34C21 34 15 16 36 16"/></svg><span>Phase<span class="brand-light">Atlas</span><small>COMPUTATIONAL PDE LAB</small></span></a>
+  <div class="nav-label">WORKSPACE</div>
+  <nav aria-label="Main navigation">
+    <a class="nav active" href="studio.html" aria-current="page" title="Custom PDE studio"><span class="nav-icon">∂</span><span>Custom PDE studio</span><span class="nav-number">NEW</span></a>
+    <a class="nav" href="index.html#lab" title="Front laboratory"><span class="nav-icon">∿</span><span>Front laboratory</span><span class="nav-number">01</span></a>
+    <a class="nav" href="index.html#atlas" title="Spectrum and atlas"><span class="nav-icon">⊞</span><span>Spectrum &amp; atlas</span><span class="nav-number">02</span></a>
+    <a class="nav" href="index.html#verify" title="Verify a solution"><span class="nav-icon">✓</span><span>Verify a solution</span><span class="nav-number">03</span></a>
+    <a class="nav" href="index.html#evidence" title="Research evidence"><span class="nav-icon">↗</span><span>Research evidence</span><span class="nav-number">04</span></a>
+    <a class="nav" href="index.html#theory" title="Theory and research"><span class="nav-icon">≡</span><span>Theory &amp; research</span><span class="nav-number">05</span></a>
+  </nav>
+  <div class="sidebar-note"><div class="pulse-dot"></div><span>Computed on your device</span><p>Your equations and fields stay in your browser. Every run can be exported.</p></div>
+  <div class="sidebar-footer"><span>RESEARCH PREVIEW</span><span>v0.2</span></div>
+</aside>
+<main class="studio-main">
+  <header class="topbar"><div><span class="breadcrumb">PhaseAtlas</span><span class="slash">/</span><span>Custom PDE studio</span></div><div class="top-actions"><a class="button small" href="#studio-guide">Syntax &amp; scope</a><label class="button small" for="import-studio">Import JSON<input id="import-studio" type="file" accept=".json,application/json" hidden></label></div></header>
+  <section class="page-title studio-title"><div><div class="eyebrow">FORMULATE / SIMULATE / VERIFY</div><h1>Your equation. Its dynamics.</h1><p>A visual workspace for custom evolution equations. Build a model, test its resolution, and take the evidence with you.</p></div><span class="badge subtle">1D + 2D · Periodic domains</span></section>
+  <div class="studio-layout">
+    <aside class="studio-editor card" aria-label="Equation editor">
+      <div class="editor-heading"><h2>Define an experiment</h2><span class="tag">01</span></div>
+      <label>Start from a model<select id="preset" aria-label="Model preset"></select></label>
+      <p id="preset-description" class="helper preset-description"></p>
+      <label>Experiment name<input id="experiment-title" maxlength="100" value="Heat diffusion"></label>
+      <div class="input-pair"><label>Dimensions<select id="dimension"><option value="1">1D · line</option><option value="2">2D · rectangle</option></select></label><label>Fields<select id="field-count"><option value="1">1 · u</option><option value="2">2 · u, v</option><option value="3">3 · u, v, w</option></select></label></div>
+      <div class="control-section">EQUATIONS &amp; INITIAL DATA</div>
+      <div id="field-editors"></div>
+      <label>Parameters<textarea id="parameters" rows="2" spellcheck="false" aria-describedby="parameter-help">nu = 0.25</textarea></label>
+      <p class="helper" id="parameter-help">Named constants separated by semicolons. Use * for multiplication and ^ for powers.</p>
+      <div class="control-section">PERIODIC DOMAIN</div>
+      <div class="input-pair"><label>Length Lx<input id="length-x" type="number" min="0.01" step="any"></label><label id="length-y-label">Length Ly<input id="length-y" type="number" min="0.01" step="any"></label></div>
+      <p class="helper">x ∈ [−Lx/2, Lx/2). Opposite edges are joined; this is not an open or fixed-wall boundary.</p>
+      <div class="control-section">NUMERICAL RESOLUTION</div>
+      <div class="input-pair"><label>End time T<input id="end-time" type="number" min="0" step="any"></label><label>Time step Δt<input id="time-step" type="number" min="0" step="any"></label></div>
+      <div class="input-pair"><label>Grid per axis<select id="grid-size"><option>16</option><option>32</option><option>64</option><option>128</option><option>256</option><option>512</option><option>1024</option></select></label><label>Saved frames<select id="frame-count"><option>31</option><option selected>61</option><option>121</option></select></label></div>
+      <div class="run-actions"><button id="run-studio" class="button primary">Run experiment <span>↗</span></button><button id="cancel-studio" class="button hidden">Cancel</button></div>
+      <progress id="studio-progress" max="1" value="0" class="hidden" aria-label="Computation progress"></progress>
+      <p id="studio-status" role="status" aria-live="polite">Preparing the diffusion benchmark…</p>
+    </aside>
+    <section class="studio-results" aria-label="Experiment results">
+      <div class="result-heading"><span class="eyebrow" id="result-title">LIVE EXPERIMENT</span><span id="result-state" class="badge">Ready</span></div>
+      <div class="stats-row studio-stats"><div class="stat"><span>Time</span><strong id="stat-time">—</strong><small id="stat-grid">—</small></div><div class="stat"><span>Field range</span><strong id="stat-range">—</strong><small id="stat-field">u</small></div><div class="stat"><span>RMS amplitude</span><strong id="stat-rms">—</strong><small id="stat-mean">—</small></div><div class="stat"><span>Reference error</span><strong id="stat-error">—</strong><small id="stat-reference">Optional comparison</small></div></div>
+      <div id="quality-note" class="notice" role="status"></div>
+      <article class="card studio-field-card"><div class="card-heading"><div><h2 id="field-heading">The evolving field</h2><p id="field-subtitle">Fixed scale across every saved frame</p></div><label class="field-picker">Field<select id="display-field" aria-label="Displayed field"><option value="0">u</option></select></label></div>
+        <div class="field-canvas-wrap"><canvas id="studio-field" role="img" aria-label="PDE field evolution"></canvas><output id="hover-value"></output></div>
+        <div id="field-colorbar" class="colorbar hidden"><span id="field-low">0</span><div></div><span id="field-high">1</span></div>
+        <div class="playback"><button id="studio-play" class="play-button" aria-label="Play animation">▶</button><button id="studio-rewind" class="button small" aria-label="Rewind animation">↶</button><input id="studio-timeline" type="range" min="0" max="60" value="0" aria-label="Animation frame"><span id="studio-frame-label">0 / 60</span><select id="studio-speed" aria-label="Playback speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></div>
+      </article>
+      <div class="chart-row studio-chart-row">
+        <article class="card"><div class="card-heading"><div><h2 id="history-heading">Space × time</h2><p id="history-subtitle">Every saved frame, one view</p></div><span class="tag">x / t</span></div><canvas id="studio-history" class="studio-small-plot" role="img" aria-label="Space-time diagram"></canvas></article>
+        <article class="card"><div class="card-heading"><div><h2>Amplitude &amp; mean</h2><p>Blue: RMS · orange: spatial mean</p></div></div><canvas id="studio-diagnostics" class="studio-small-plot" role="img" aria-label="RMS amplitude and spatial mean over time"></canvas></article>
+      </div>
+      <article class="card resolution-card"><div class="card-heading"><div><div class="eyebrow">02 / CHECK BEFORE YOU CONCLUDE</div><h2>Does the result survive refinement?</h2><p>Halve Δt. Then double the grid at the smaller time step.</p></div><button id="refine-studio" class="button" disabled>Check resolution ↗</button></div><div id="refinement-result"><p class="helper">Not checked. A completed simulation alone does not establish numerical convergence.</p></div><details><summary>Method, spectral resolution &amp; warnings</summary><p id="method-description" class="helper"></p><canvas id="studio-spectrum" class="studio-small-plot" role="img" aria-label="Logarithmic Fourier energy by mode number"></canvas><p class="helper">Spectrum of the selected frame. The projection retains |mode| &lt; N/4 on each axis; N is the collocation grid, not the number of retained modes.</p><ul id="studio-warnings"></ul></details></article>
+      <article class="card"><div class="card-heading"><div><div class="eyebrow">03 / TAKE THE EVIDENCE WITH YOU</div><h2>Reproduce, compare, communicate</h2><p>Exports always describe the last successful run, including its equation and method.</p></div></div><div class="studio-exports"><button class="button" id="export-studio-json" disabled>Experiment JSON</button><button class="button" id="export-studio-csv" disabled>Full-field CSV</button><button class="button" id="export-studio-figure" disabled>Figure SVG</button><button class="button" id="export-studio-video" disabled>Animation WebM</button><button class="button" id="export-studio-config" disabled>Shareable link</button><a class="button" href="downloads/studio_reference.py" download>Python reference</a></div><p class="helper">JSON includes all fields and frames. Import reruns the configuration; it never treats saved results as verified evidence. Share links contain the equations and parameters you choose to share.</p><details><summary>Recompute with an independent Python integrator</summary><p class="helper">Install NumPy and SciPy, then run <code>python studio_reference.py phaseatlas-custom-experiment.json</code>. This uses NumPy FFT and SciPy DOP853, independently of the browser time integrator. Use N ≤ 128 in 1D or N ≤ 32 per axis in 2D; add <code>--method BDF</code> for a stiff small-grid check. Agreement on one grid is not a continuum error bound.</p></details><div id="share-link-box" class="hidden"><label>Experiment link<input id="share-link" readonly></label></div></article>
+    </section>
+  </div>
+  <section id="studio-guide" class="studio-guide card"><div class="eyebrow">A SMALL LANGUAGE FOR A LARGE FAMILY OF MODELS</div><h2>Write the equation you want to investigate.</h2><div class="guide-grid"><div><h3>Expression syntax</h3><dl><dt>Fields &amp; coordinates</dt><dd><code>u, v, w, x, y, t, Lx, Ly, pi, e</code>. Only active fields and coordinates are available.</dd><dt>Spatial derivatives</dt><dd><code>Dx(u,1)</code>, <code>Dx(u,4)</code>, <code>Dy(v,2)</code>, <code>lap(u)</code>, <code>biharm(u)</code>. Derivatives may act on expressions: <code>lap(u^3)</code>.</dd><dt>Arithmetic &amp; functions</dt><dd><code>+ - * / ^</code>, <code>sin cos tanh exp log sqrt abs min max</code>. Initial data use coordinates and parameters; references also accept t.</dd></dl></div><div><h3>What this solver supports</h3><p>One to three real fields on a 1D periodic interval or 2D periodic rectangle. Equations must be written as first-order evolution systems with spatial derivatives up to total order four.</p><p>Constant-coefficient, same-field linear terms are integrated exponentially. Coupled and variable-coefficient derivatives remain explicit and can require much smaller time steps.</p><p>Elliptic boundary-value problems, arbitrary geometries, non-periodic boundaries, shocks without regularization, and constrained systems need other numerical methods. Reference formulas are comparisons supplied by you, not automatically proven exact solutions.</p><p class="helper">Theory: <a href="https://people.maths.ox.ac.uk/trefethen/fourth-order.pdf" target="_blank" rel="noreferrer">Kassam &amp; Trefethen, fourth-order time stepping</a>. The front laboratory retains its separate, model-specific analytic checks.</p></div></div></section>
+  <footer class="main-footer"><span>PhaseAtlas <span class="footer-dot">·</span> <a href="data/studio-validation.json" download>Measured benchmark record</a> <span class="footer-dot">·</span> <a href="downloads/CUSTOM_PDE_STUDIO.md" download>Studio guide</a></span><span>EXPLORATION IS THE START OF VERIFICATION</span></footer>
+</main>
+<div id="studio-toast" role="status" aria-live="polite"></div>
+</body></html>

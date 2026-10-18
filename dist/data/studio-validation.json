@@ -1,0 +1,126 @@
+{
+  "schema": "phaseatlas-studio-validation/v1",
+  "releaseValidationDate": "2026-10-18",
+  "description": "Measured regression examples, not validation of arbitrary user-entered PDEs.",
+  "independentComparisons": [
+    {
+      "model": "burgers",
+      "config": {
+        "title": "Viscous Burgers",
+        "dimension": 1,
+        "N": 64,
+        "Lx": 6.283185307179586,
+        "Ly": 6.283185307179586,
+        "T": 0.5,
+        "dt": 0.01,
+        "frames": 2,
+        "parameters": "nu = 0.025",
+        "boundary": "periodic",
+        "fields": [
+          {
+            "name": "u",
+            "rhs": "nu*lap(u) - 0.5*Dx(u^2, 1)",
+            "initial": "0.7*sin(x)",
+            "exact": ""
+          }
+        ]
+      },
+      "browserSolverVersion": "phaseatlas-spectral-1.0.0",
+      "referenceMethod": "SciPy solve_ivp DOP853; NumPy FFT; rtol=1e-9, atol=1e-11",
+      "scope": "Same periodic grid and half-band projection. This is an independent time-integration check, not a continuum error bound.",
+      "fields": [
+        {
+          "field": "u",
+          "mean": -7.15573433840433e-18,
+          "rms": 0.4886348784256292,
+          "browserRelativeL2Difference": 1.1950976783916016e-10
+        }
+      ]
+    },
+    {
+      "model": "gray",
+      "config": {
+        "title": "Gray\u9225\u63ddcott reaction\u9225\u63f9iffusion",
+        "dimension": 2,
+        "N": 16,
+        "Lx": 32,
+        "Ly": 32,
+        "T": 2,
+        "dt": 0.05,
+        "frames": 2,
+        "parameters": "Du = 0.16; Dv = 0.08; F = 0.035; k = 0.065",
+        "boundary": "periodic",
+        "fields": [
+          {
+            "name": "u",
+            "rhs": "Du*lap(u) - u*v^2 + F*(1-u)",
+            "initial": "1-0.5*exp(-(x^2+y^2)/16)",
+            "exact": ""
+          },
+          {
+            "name": "v",
+            "rhs": "Dv*lap(v) + u*v^2 - (F+k)*v",
+            "initial": "0.25*exp(-(x^2+y^2)/16)*(1+0.1*cos(x)*cos(y))",
+            "exact": ""
+          }
+        ]
+      },
+      "browserSolverVersion": "phaseatlas-spectral-1.0.0",
+      "referenceMethod": "SciPy solve_ivp DOP853; NumPy FFT; rtol=1e-9, atol=1e-11",
+      "scope": "Same periodic grid and half-band projection. This is an independent time-integration check, not a continuum error bound.",
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.9751178772276081,
+          "rms": 0.9778727603251685,
+          "browserRelativeL2Difference": 2.7039667447635518e-14
+        },
+        {
+          "field": "v",
+          "mean": 0.011921826469484162,
+          "rms": 0.03841047609483209,
+          "browserRelativeL2Difference": 4.4121660097200817e-13
+        }
+      ]
+    },
+    {
+      "model": "cahn",
+      "config": {
+        "title": "Cahn\u9225\u63ccilliard phase separation",
+        "dimension": 2,
+        "N": 16,
+        "Lx": 16,
+        "Ly": 16,
+        "T": 0.1,
+        "dt": 0.002,
+        "frames": 2,
+        "parameters": "epsilon = 0.5",
+        "boundary": "periodic",
+        "fields": [
+          {
+            "name": "u",
+            "rhs": "-epsilon^2*biharm(u) - lap(u) + lap(u^3)",
+            "initial": "0.1*cos(2*pi*x/Lx)+0.08*sin(4*pi*y/Ly)+0.03*cos(6*pi*(x/Lx+y/Ly))",
+            "exact": ""
+          }
+        ]
+      },
+      "browserSolverVersion": "phaseatlas-spectral-1.0.0",
+      "referenceMethod": "SciPy solve_ivp DOP853; NumPy FFT; rtol=1e-9, atol=1e-11",
+      "scope": "Same periodic grid and half-band projection. This is an independent time-integration check, not a continuum error bound.",
+      "fields": [
+        {
+          "field": "u",
+          "mean": 4.3274913275222204e-18,
+          "rms": 0.09599777302594303,
+          "browserRelativeL2Difference": 2.0012086599398867e-15
+        }
+      ]
+    }
+  ],
+  "reproduce": [
+    "node tests/studio_reference_fixtures.mjs",
+    "python research/studio_reference.py research/validation/studio-MODEL.json --output research/validation/studio-MODEL-reference.json",
+    "python research/build_studio_validation.py"
+  ]
+}

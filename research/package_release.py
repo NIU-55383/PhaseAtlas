@@ -8,6 +8,8 @@ root=Path(__file__).resolve().parent.parent
 downloads=root/'dist/downloads';downloads.mkdir(exist_ok=True)
 for source in [root/'docs/RESEARCH_NOTES.md',root/'docs/ACCEPTANCE.md',root/'docs/DEMO_SCRIPT.md',root/'docs/PhaseAtlas_Project_Brief.pdf',root/'docs/PhaseAtlas_Cubic_Demo.webm']:
     shutil.copy2(source,downloads/source.name)
+shutil.copy2(root/'research/studio_reference.py', downloads/'studio_reference.py')
+shutil.copy2(root/'docs/CUSTOM_PDE_STUDIO.md', downloads/'CUSTOM_PDE_STUDIO.md')
 baseline=root/'docs/screenshots/phaseatlas-cubic.json'
 if baseline.exists():
     shutil.copy2(baseline,downloads/'reference-experiment.json')

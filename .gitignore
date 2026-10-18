@@ -9,3 +9,4 @@ docs/screenshots/
 .archive/
 .venv/
 .env
+.openai/
