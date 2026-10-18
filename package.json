@@ -1,10 +1,10 @@
 {
   "name": "phaseatlas",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/science.test.mjs tests/studio.test.mjs"
+    "test": "node --test tests/science.test.mjs tests/studio.test.mjs tests/boundaries.test.mjs"
   },
   "description": "A reproducible nonlinear wave research workbench"
 }

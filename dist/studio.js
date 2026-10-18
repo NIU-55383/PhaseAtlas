@@ -1,5 +1,5 @@
 import {PRESETS, presetConfig} from './studio-presets.js';
-import {prepare, makeGrid, METHOD, validateConfig} from './studio-solver.js';
+import {prepare, makeGrid, validateConfig} from './studio-solver.js';
 import {parseParameters, parseExpression, evaluate} from './studio-expression.js';
 
 const $ = id => document.getElementById(id);
@@ -33,22 +33,46 @@ function editorFields(count, values = []) {
     $(`rhs-${name}`).value = values[i]?.rhs ?? '0.1*lap('+name+')';
     $(`initial-${name}`).value = values[i]?.initial ?? (i === 0 ? 'sin(2*pi*x/Lx)' : '0');
     $(`exact-${name}`).value = values[i]?.exact ?? '';
+    const edges=document.createElement('details');edges.className='boundary-editor';edges.open=true;
+    edges.innerHTML=`<summary>Boundary data for ${name}</summary>`;
+    for(const side of ['left','right','bottom','top']){
+      const row=document.createElement('div');row.className='boundary-row';row.dataset.side=side;
+      row.innerHTML=`<label>${side[0].toUpperCase()+side.slice(1)} edge<select id="bc-${name}-${side}-type" aria-label="${name} ${side} boundary type"><option value="dirichlet">Dirichlet · value</option><option value="neumann">Neumann · ∂n</option></select></label><label>Boundary expression<input id="bc-${name}-${side}-value" spellcheck="false" aria-label="${name} ${side} boundary expression"></label>`;
+      edges.append(row);
+    }
+    wrapper.append(edges);
+    for(const side of ['left','right','bottom','top']){
+      $(`bc-${name}-${side}-type`).value=values[i]?.boundaries?.[side]?.type??($('boundary-mode').value==='neumann'?'neumann':'dirichlet');
+      $(`bc-${name}-${side}-value`).value=values[i]?.boundaries?.[side]?.value??'0';
+    }
   }
+  boundaryDisplay();
 }
-function readFields() { return ['u','v','w'].slice(0, Number($('field-count').value)).map(name => ({rhs: $(`rhs-${name}`)?.value || '0', initial: $(`initial-${name}`)?.value || '0', exact: $(`exact-${name}`)?.value || ''})); }
+function readFields() { return ['u','v','w'].slice(0, Number($('field-count').value)).map(name => ({rhs: $(`rhs-${name}`)?.value || '0', initial: $(`initial-${name}`)?.value || '0', exact: $(`exact-${name}`)?.value || '', boundaries:Object.fromEntries(['left','right','bottom','top'].map(side=>[side,{type:$(`bc-${name}-${side}-type`)?.value??'dirichlet',value:$(`bc-${name}-${side}-value`)?.value??'0'}]))})); }
+function boundaryDisplay(){
+  const periodic=$('boundary-mode').value==='periodic',two=$('dimension').value==='2';
+  document.querySelectorAll('.boundary-editor').forEach(el=>el.classList.toggle('hidden',periodic));
+  document.querySelectorAll('.boundary-row').forEach(el=>el.classList.toggle('hidden',!two&&['bottom','top'].includes(el.dataset.side)));
+  $('boundary-help').classList.toggle('hidden',periodic);
+  $('domain-help').textContent=periodic?'x ∈ [−Lx/2, Lx/2). Opposite edges are joined.':'x ∈ [−Lx/2, Lx/2]'+(two?', y ∈ [−Ly/2, Ly/2].':'.')+' Values are computed at cell centers; each edge has its own boundary data.';
+}
+const boundaryLabel=c=>c.boundary==='periodic'?'periodic':'Dirichlet / Neumann';
 function dimensions() {
   const two = $('dimension').value === '2'; $('length-y-label').classList.toggle('hidden', !two);
   [...$('grid-size').options].forEach(o => { o.disabled = two && Number(o.value) > 128; });
   if (two && Number($('grid-size').value) > 128) $('grid-size').value = '64';
+  boundaryDisplay();
 }
 function applyConfig(c) {
   $('experiment-title').value = c.title; $('dimension').value = String(c.dimension); $('field-count').value = String(c.fields.length);
+  $('boundary-mode').value=c.boundary==='periodic'||!c.boundary?'periodic':'nonperiodic';
+  if(['dirichlet','neumann'].includes(c.boundary))c={...c,fields:c.fields.map(f=>({...f,boundaries:f.boundaries??Object.fromEntries(['left','right','bottom','top'].map(side=>[side,{type:c.boundary,value:'0'}]))}))};
   $('parameters').value = c.parameters; $('length-x').value = c.Lx; $('length-y').value = c.Ly;
   $('end-time').value = c.T; $('time-step').value = c.dt; $('grid-size').value = String(c.N);
   if (![...$('frame-count').options].some(o => Number(o.value) === c.frames)) $('frame-count').add(new Option(String(c.frames), String(c.frames)));
   $('frame-count').value = String(c.frames); editorFields(c.fields.length, c.fields); dimensions();
 }
-function readConfig() { return {title: $('experiment-title').value, dimension: Number($('dimension').value), fields: readFields(), parameters: $('parameters').value, Lx: Number($('length-x').value), Ly: Number($('length-y').value), N: Number($('grid-size').value), T: Number($('end-time').value), dt: Number($('time-step').value), frames: Number($('frame-count').value), boundary: 'periodic'}; }
+function readConfig() { return {title: $('experiment-title').value, dimension: Number($('dimension').value), fields: readFields(), parameters: $('parameters').value, Lx: Number($('length-x').value), Ly: Number($('length-y').value), N: Number($('grid-size').value), T: Number($('end-time').value), dt: Number($('time-step').value), frames: Number($('frame-count').value), boundary: $('boundary-mode').value==='periodic'?'periodic':'nonperiodic'}; }
 function changed() { if (!busy) { status('Settings changed. Run to update the figures; exports retain the last successful experiment.'); $('result-state').textContent = result ? 'Previous run' : 'Ready'; } }
 function setBusy(value) {
   busy = value;
@@ -88,16 +112,16 @@ function acceptResult(next) {
   referenceAsts = c.fields.map(f => f.exact ? parseExpression(f.exact, [...Object.keys(referenceContext), 't']) : null);
   ranges = c.fields.map((_, f) => {
     let min = Infinity, max = -Infinity;
-    for (const snapshot of result.frames) { min = Math.min(min, snapshot.diagnostics[f].min); max = Math.max(max, snapshot.diagnostics[f].max); }
+    for (const snapshot of result.frames) { min = Math.min(min, snapshot.diagnostics[f].min); max = Math.max(max, snapshot.diagnostics[f].max); if(c.dimension===1&&snapshot.boundaryFaces){const edges=Object.values(snapshot.boundaryFaces[f]).flat();min=Math.min(min,...edges);max=Math.max(max,...edges);} }
     if (max-min < 1e-12) { min -= Math.max(1, Math.abs(min))*.05; max += Math.max(1, Math.abs(max))*.05; }
     return [min, max];
   });
   $('display-field').replaceChildren(...c.fields.map((f, i) => new Option(f.name, String(i))));
   $('studio-timeline').max = result.frames.length - 1;
   $('result-title').textContent = c.title; $('result-state').textContent = 'Computed';
-  $('method-description').textContent = `${METHOD} Actual Δt = ${fmt(result.dt)}; ${result.steps} steps. Runtime ${(result.elapsedMs/1000).toFixed(2)} s. Initial projection difference: ${fmt(result.initialProjectionRelativeL2)} (relative L²).`;
+  $('method-description').textContent = `${result.method} Actual Δt = ${fmt(result.dt)}; ${result.steps} steps. Runtime ${(result.elapsedMs/1000).toFixed(2)} s. `+(c.boundary==='periodic'?`Initial projection difference: ${fmt(result.initialProjectionRelativeL2)} (relative L²).`:`Largest implicit-solve residual: ${fmt(result.linearSolve.maxAbsoluteResidual)} (absolute Euclidean norm). Initial boundary mismatch: ${result.initialBoundaryMismatch.map(fmt).join(', ')}. Reactions and transport remain explicit; time-step refinement is essential.`);
   $('studio-warnings').replaceChildren(...result.warnings.map(w => {const li = document.createElement('li'); li.textContent = w; return li;}));
-  const resolutionWarnings=result.warnings.filter(w=>!w.startsWith('A smooth animation')&&!w.includes('remain explicit'));
+  const resolutionWarnings=result.warnings.filter(w=>!w.startsWith('A smooth animation')&&!w.startsWith('A completed bounded-domain run')&&!w.includes('remain explicit'));
   $('quality-note').textContent=resolutionWarnings.join(' ');$('quality-note').classList.toggle('visible',resolutionWarnings.length>0);
   $('refinement-result').innerHTML = '<p class="helper">Not checked for this run. Compare time and spatial resolution separately.</p>';
   exportButtons.forEach(id => { $(id).disabled = false; }); $('refine-studio').disabled = false;
@@ -149,20 +173,28 @@ function reference(data,index,f) {
   const a=evaluate(referenceAsts[f],{...referenceContext,t:data.frames[index].t},grid);
   return typeof a==='number'?Array(grid.size).fill(a):Array.from(a);
 }
+function fieldCurves(data,index,f){
+  const c=data.config,s=data.frames[index],values=s.values[f],ref=reference(data,index,f);
+  if(c.boundary==='periodic'){
+    const x=Array.from({length:c.N+1},(_,i)=>-c.Lx/2+i*c.Lx/c.N);
+    return [{x,y:[...values,values[0]],color:colors[f]},...(ref?[{x,y:[...ref,ref[0]],color:'#7a8195',dashed:true,width:1.3}]:[])];
+  }
+  const edges=s.boundaryFaces[f],curves=[{x:[-c.Lx/2,...grid.x,c.Lx/2],y:[edges.left[0],...values,edges.right[0]],color:colors[f]}];
+  if(ref){const endpoint=x=>evaluate(referenceAsts[f],{...referenceContext,x,y:0,t:s.t}),left=endpoint(-c.Lx/2),right=endpoint(c.Lx/2),finite=Number.isFinite(left)&&Number.isFinite(right);curves.push({x:finite?curves[0].x:Array.from(grid.x),y:finite?[left,...ref,right]:ref,color:'#7a8195',dashed:true,width:1.3});}
+  return curves;
+}
 function paintField(ctx,width,height,data,index,f) {
   const c=data.config, values=data.frames[index].values[f], range=ranges[f];ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
   if(c.dimension===2)return paintRaster(ctx,width,height,values,c.N,c.N,range,{xmin:-c.Lx/2,xmax:c.Lx/2,ymin:-c.Ly/2,ymax:c.Ly/2,xlabel:'x',ylabel:'y',equalAspect:true});
-  const x=Array.from({length:c.N+1},(_,i)=>-c.Lx/2+i*c.Lx/c.N), span=range[1]-range[0];
+  const span=range[1]-range[0];
   const g=axes(ctx,width,height,{xmin:-c.Lx/2,xmax:c.Lx/2,ymin:range[0]-.08*span,ymax:range[1]+.08*span,xlabel:'x',ylabel:c.fields[f].name});
-  const curves=[{x,y:[...values,values[0]],color:colors[f]}], ref=reference(data,index,f);
-  if(ref)curves.push({x,y:[...ref,ref[0]],color:'#7a8195',dashed:true,width:1.3});
-  lines(ctx,g,curves);return g;
+  lines(ctx,g,fieldCurves(data,index,f));return g;
 }
 function renderFrame() {
   if(!result)return;
   const c=result.config, snapshot=result.frames[frame], d=snapshot.diagnostics[field];
   $('studio-timeline').value=frame;$('studio-frame-label').textContent=`${frame} / ${result.frames.length-1}`;
-  $('stat-time').textContent=fmt(snapshot.t);$('stat-grid').textContent=`${c.N}${c.dimension===2?' × '+c.N:''} grid · periodic`;
+  $('stat-time').textContent=fmt(snapshot.t);$('stat-grid').textContent=`${c.N}${c.dimension===2?' × '+c.N:''} ${c.boundary==='periodic'?'grid · periodic':'cells · bounded'}`;
   $('stat-range').textContent=`${fmt(d.min)} … ${fmt(d.max)}`;$('stat-field').textContent=`Field ${c.fields[field].name}`;
   $('stat-rms').textContent=fmt(d.rms);$('stat-mean').textContent=`Mean ${fmt(d.mean)}`;
   $('stat-error').textContent=d.referenceRelativeL2 !== undefined ? fmt(d.referenceRelativeL2 ?? d.referenceRmsError) : '—';
@@ -170,7 +202,7 @@ function renderFrame() {
   let checkBox=$('reference-check');
   if(!checkBox){checkBox=document.createElement('p');checkBox.id='reference-check';checkBox.className='helper';$('refinement-result').after(checkBox);}
   const check=result.referenceChecks?.[field];
-  checkBox.textContent=check?`Supplied reference: initial RMS mismatch ${fmt(check.initialRmsMismatch)}; largest sampled PDE residual RMS ${fmt(check.maximumSampledRmsResidual)} at t = 0, T/2, T. These use spectral spatial and finite-difference time derivatives, not a symbolic proof.`:c.fields.some(f=>f.exact)?'PDE residual sampling requires a smooth reference for every active field.':'Optional: supply reference formulas to compare initial data and sample the PDE residual.';
+  checkBox.textContent=check?`Supplied reference: initial RMS mismatch ${fmt(check.initialRmsMismatch)}; largest sampled PDE residual RMS ${fmt(check.maximumSampledRmsResidual)} at t = 0, T/2, T. `+(c.boundary==='periodic'?'These use spectral spatial and finite-difference time derivatives.':'These use the finite-volume spatial operator and finite-difference time derivatives. Maximum sampled boundary mismatch: '+fmt(check.maximumBoundaryMismatch)+'.')+' Numerical checks, not a symbolic proof.':c.fields.some(f=>f.exact)?'PDE residual sampling requires a smooth reference for every active field.':'Optional: supply reference formulas to compare initial data and sample the PDE residual.';
   $('field-heading').textContent=c.dimension===2?'A field across the domain':'The evolving field';
   $('field-subtitle').textContent=c.dimension===2?'Color scale fixed across the entire run':referenceAsts[field]?'Solid: computed · dashed: supplied reference · fixed vertical scale':'Fixed vertical scale across the entire run';
   $('field-colorbar').classList.toggle('hidden',c.dimension!==2);$('field-low').textContent=fmt(ranges[field][0]);$('field-high').textContent=fmt(ranges[field][1]);
@@ -179,9 +211,9 @@ function renderFrame() {
 }
 function renderHistory() {
   const c=result.config, snapshots=result.frames, values=[];
-  for(const s of snapshots)for(let i=0;i<c.N;i++)values.push(s.values[field][(c.dimension===2?Math.floor(c.N/2)*c.N:0)+i]);
+  for(const s of snapshots)for(let i=0;i<c.N;i++){const row=c.dimension===2?Math.floor(c.N/2)*c.N:0;values.push(c.dimension===2&&c.boundary!=='periodic'?(s.values[field][row+i]+s.values[field][row-c.N+i])/2:s.values[field][row+i]);}
   $('history-heading').textContent=c.dimension===2?'A slice through space × time':'Space × time';
-  $('history-subtitle').textContent=c.dimension===2?'Center slice y = 0 · selected field':'Selected field across all saved times';
+  $('history-subtitle').textContent=c.dimension===2?'Center slice y = 0'+(c.boundary!=='periodic'?' · interpolated between central rows':' · selected field'):'Selected field across all saved times';
   const {ctx,width,height}=canvas('studio-history');
   paintRaster(ctx,width,height,values,c.N,snapshots.length,ranges[field],{xmin:-c.Lx/2,xmax:c.Lx/2,ymin:0,ymax:c.T,xlabel:'x',ylabel:'t'});
 }
@@ -191,6 +223,15 @@ function renderDiagnostics() {
   const {ctx,width,height}=canvas('studio-diagnostics'),g=axes(ctx,width,height,{xmin:0,xmax:result.config.T,ymin:min,ymax:max,xlabel:'t'});lines(ctx,g,series);
 }
 function renderSpectrum() {
+  if(result.config.boundary!=='periodic'){
+    const series={x:result.frames.map(s=>s.t),y:result.frames.map(s=>s.diagnostics[field].boundaryMassRate)},min=Math.min(...series.y),max=Math.max(...series.y),span=Math.max(1e-8,max-min);
+    const {ctx,width,height}=canvas('studio-spectrum'),g=axes(ctx,width,height,{xmin:0,xmax:result.config.T,ymin:min-.08*span,ymax:max+.08*span,xlabel:'t',ylabel:'Diffusive mass input rate'});lines(ctx,g,[series]);
+    $('studio-spectrum').setAttribute('aria-label','Diffusive boundary mass input over time');
+    $('spectrum-note').textContent='Net diffusive mass input through the boundary: ∫ D ∂n u ds. Positive means diffusion adds mass. This excludes reactions, sources and advective transport. For a closed diffusion-only system it should be zero. Neumann inputs are normal derivatives, not physical fluxes.';
+    return;
+  }
+  $('studio-spectrum').setAttribute('aria-label','Logarithmic Fourier energy by mode number');
+  $('spectrum-note').textContent='Spectrum of the selected frame. The projection retains |mode| < N/4 on each axis; N is the collocation grid, not the number of retained modes.';
   const c=result.config,v=grid.forward(result.frames[frame].values[field]),bins=new Float64Array(c.N/2+1);
   for(let j=0;j<grid.ny;j++)for(let i=0;i<c.N;i++){const mx=Math.min(i,c.N-i),my=Math.min(j,grid.ny-j),p=j*c.N+i;bins[Math.max(mx,my)]+=(v.re[p]**2+v.im[p]**2)/grid.size**2;}
   const peak=Math.max(1e-30,...bins),y=Array.from(bins,a=>Math.log10(Math.max(peak*1e-16,a))),ymax=Math.ceil(Math.log10(peak));
@@ -217,13 +258,13 @@ function exportCSV(){
 function svgFigure(){
   const c=result.config,s=result.frames[frame],W=1000,H=680,p={x:95,y:115,w:810,h:430},range=ranges[field],name=c.fields[field].name;
   if(c.dimension===2){const ratio=c.Lx/c.Ly;if(p.w/p.h>ratio){const w=p.h*ratio;p.x+=(p.w-w)/2;p.w=w;}else{const h=p.w/ratio;p.y+=(p.h-h)/2;p.h=h;}}
-  let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><metadata>${escapeXML(JSON.stringify({solverVersion:result.solverVersion,config:c,frame,field:name,method:result.method}))}</metadata><rect width="100%" height="100%" fill="white"/><g font-family="Arial,Helvetica,sans-serif"><text x="60" y="45" font-size="25" fill="#0000cd">PhaseAtlas / ${escapeXML(c.title)}</text><text x="60" y="78" font-size="14" fill="#65718a">Field ${name} · t = ${fmt(s.t)} · periodic ${c.dimension}D domain · N = ${c.N} · Δt = ${fmt(result.dt)}</text>`;
+  let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><metadata>${escapeXML(JSON.stringify({solverVersion:result.solverVersion,config:c,frame,field:name,method:result.method}))}</metadata><rect width="100%" height="100%" fill="white"/><g font-family="Arial,Helvetica,sans-serif"><text x="60" y="45" font-size="25" fill="#0000cd">PhaseAtlas / ${escapeXML(c.title)}</text><text x="60" y="78" font-size="14" fill="#65718a">Field ${name} · t = ${fmt(s.t)} · ${boundaryLabel(c)} ${c.dimension}D domain · N = ${c.N} · Δt = ${fmt(result.dt)}</text>`;
   const X=x=>p.x+(x+c.Lx/2)/c.Lx*p.w;let ymin,ymax;
   if(c.dimension===2){ymin=-c.Ly/2;ymax=c.Ly/2;for(let j=0;j<c.N;j++)for(let i=0;i<c.N;i++){const rgb=color((s.values[field][j*c.N+i]-range[0])/(range[1]-range[0]));svg+=`<rect x="${p.x+i*p.w/c.N}" y="${p.y+(c.N-1-j)*p.h/c.N}" width="${p.w/c.N+.02}" height="${p.h/c.N+.02}" fill="rgb(${rgb})"/>`;}}
   else {const span=range[1]-range[0];ymin=range[0]-.08*span;ymax=range[1]+.08*span;}
   const Y=y=>p.y+p.h-(y-ymin)/(ymax-ymin)*p.h;
   for(let i=0;i<=4;i++){const x=-c.Lx/2+i*c.Lx/4,y=ymin+i*(ymax-ymin)/4;svg+=`<text x="${X(x)}" y="${p.y+p.h+24}" text-anchor="middle" font-size="12" fill="#65718a">${fmt(x)}</text><text x="${p.x-12}" y="${Y(y)+4}" text-anchor="end" font-size="12" fill="#65718a">${fmt(y)}</text>`;if(c.dimension===1)svg+=`<path d="M${p.x} ${Y(y)}H${p.x+p.w}" stroke="#edf0f5"/>`;}
-  if(c.dimension===1){for(const [values,stroke,dashed] of [[s.values[field],colors[field],false],[reference(result,frame,field),'#7a8195',true]])if(values){let path='';for(let i=0;i<=c.N;i++)path+=`${i?'L':'M'}${X(-c.Lx/2+i*c.Lx/c.N).toFixed(3)},${Y(values[i%c.N]).toFixed(3)} `;svg+=`<path d="${path}" fill="none" stroke="${stroke}" stroke-width="2" ${dashed?'stroke-dasharray="6 4"':''}/>`;}}
+  if(c.dimension===1){for(const curve of fieldCurves(result,frame,field)){let path='';curve.y.forEach((v,i)=>{path+=`${i?'L':'M'}${X(curve.x[i]).toFixed(3)},${Y(v).toFixed(3)} `;});svg+=`<path d="${path}" fill="none" stroke="${curve.color}" stroke-width="2" ${curve.dashed?'stroke-dasharray="6 4"':''}/>`;}}
   else {for(let i=0;i<200;i++)svg+=`<rect x="${p.x+i*p.w/200}" y="585" width="${p.w/200+.1}" height="9" fill="rgb(${color(i/199)})"/>`;svg+=`<text x="${p.x}" y="614" font-size="12">${fmt(range[0])}</text><text x="${p.x+p.w}" y="614" text-anchor="end" font-size="12">${fmt(range[1])}</text>`;}
   svg+=`<text x="${p.x+p.w}" y="${p.y+p.h+43}" font-size="14" text-anchor="end">x</text><text x="${p.x}" y="${p.y-13}" font-size="14">${c.dimension===2?'y':name}</text><text x="60" y="650" font-size="11" fill="#65718a">Fixed scale across this run. Numerical observation; export JSON for the complete model and diagnostics.</text></g></svg>`;return svg;
 }
@@ -239,7 +280,7 @@ async function recordVideo(){
     // Freeze changes that would invalidate the recording's shared plot scales.
     setBusy(true);$('cancel-studio').classList.add('hidden');$('studio-progress').classList.add('hidden');
     toast('Recording a 10-second animation. Keep this tab visible.');recorder.start();const start=performance.now();
-    await new Promise(resolve=>{function draw(now){const fraction=Math.min(1,(now-start)/10000),index=Math.min(data.frames.length-1,Math.floor(fraction*(data.frames.length-1)));ctx.fillStyle='#fff';ctx.fillRect(0,0,1280,800);ctx.fillStyle='#0000cd';ctx.font='bold 28px Arial';ctx.fillText('PhaseAtlas / '+data.config.title,65,48,1150);ctx.fillStyle='#65718a';ctx.font='16px Arial';ctx.fillText(`Field ${data.config.fields[f].name} · t = ${fmt(data.frames[index].t)} · N = ${data.config.N} · Δt = ${fmt(data.dt)}`,65,81);ctx.save();ctx.translate(35,110);paintField(ctx,1210,570,data,index,f);ctx.restore();ctx.font='15px Arial';ctx.fillStyle='#65718a';ctx.fillText(`Periodic domain · fixed scale [${fmt(ranges[f][0])}, ${fmt(ranges[f][1])}] · ${data.config.dimension===2?'color: blue → white → orange':'solid: computed; dashed: reference if supplied'}`,65,728);ctx.fillText('Numerical observation. Export the experiment JSON for reproducibility and refinement checks.',65,759);if(fraction<1)requestAnimationFrame(draw);else resolve();}requestAnimationFrame(draw);});
+    await new Promise(resolve=>{function draw(now){const fraction=Math.min(1,(now-start)/10000),index=Math.min(data.frames.length-1,Math.floor(fraction*(data.frames.length-1)));ctx.fillStyle='#fff';ctx.fillRect(0,0,1280,800);ctx.fillStyle='#0000cd';ctx.font='bold 28px Arial';ctx.fillText('PhaseAtlas / '+data.config.title,65,48,1150);ctx.fillStyle='#65718a';ctx.font='16px Arial';ctx.fillText(`Field ${data.config.fields[f].name} · t = ${fmt(data.frames[index].t)} · N = ${data.config.N} · Δt = ${fmt(data.dt)}`,65,81);ctx.save();ctx.translate(35,110);paintField(ctx,1210,570,data,index,f);ctx.restore();ctx.font='15px Arial';ctx.fillStyle='#65718a';ctx.fillText(`${boundaryLabel(data.config)} domain · fixed scale [${fmt(ranges[f][0])}, ${fmt(ranges[f][1])}] · ${data.config.dimension===2?'color: blue → white → orange':'solid: computed; dashed: reference if supplied'}`,65,728);ctx.fillText('Numerical observation. Export the experiment JSON for reproducibility and refinement checks.',65,759);if(fraction<1)requestAnimationFrame(draw);else resolve();}requestAnimationFrame(draw);});
     recorder.stop();await done;download('phaseatlas-custom-animation.webm',new Blob(chunks,{type:'video/webm'}));toast('Animation exported.');
   }catch(e){toast(e.message);}finally{if(recorder?.state==='recording')recorder.stop();stream.getTracks().forEach(t=>t.stop());setBusy(false);button.disabled=false;status('Animation recording finished; the experiment is unchanged.');}
 }
@@ -247,6 +288,8 @@ function shareLink(){if(!result)return;const bytes=new TextEncoder().encode(JSON
 
 for(const p of PRESETS)$('preset').add(new Option(p.label,p.id));
 $('preset').onchange=()=>{const p=PRESETS.find(p=>p.id===$('preset').value);applyConfig(presetConfig(p.id));$('preset-description').textContent=p.description;changed();};
+$('boundary-mode').onchange=()=>{const mode=$('boundary-mode').value;if(mode==='dirichlet'||mode==='neumann'){document.querySelectorAll('.boundary-row select').forEach(el=>{el.value=mode;});document.querySelectorAll('.boundary-row input').forEach(el=>{el.value='0';});}boundaryDisplay();changed();};
+document.querySelector('#field-editors').addEventListener('input',e=>{if(e.target.closest('.boundary-row'))$('boundary-mode').value='nonperiodic';});
 $('field-count').onchange=()=>{editorFields(Number($('field-count').value),readFields());changed();};
 $('dimension').onchange=()=>{dimensions();editorFields(Number($('field-count').value),readFields());changed();};
 document.querySelector('.studio-editor').addEventListener('input',changed);

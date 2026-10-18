@@ -87,7 +87,7 @@ test('nested-grid comparison samples coincident physical points in 2D', async ()
 });
 
 test('unsupported inputs fail explicitly, and divergent runs do not fabricate output', async () => {
-  assert.throws(() => prepare({...presetConfig('heat'), boundary: 'dirichlet'}), /periodic/);
+  assert.throws(() => prepare({...presetConfig('heat'), boundary: 'robin'}), /boundaries/);
   assert.throws(() => prepare({...presetConfig('heat'), fields: [{rhs: 'Dy(u,1)', initial: 'sin(x)'}]}), /two-dimensional/);
   await assert.rejects(() => simulate({...presetConfig('heat'), fields: [{rhs: 'log(-1)', initial: '0'}]}), /finite/);
   await assert.rejects(() => simulate({...presetConfig('heat'), dt: .1, fields: [{rhs: '-lap(u)', initial: 'sin(x)'}]}), /growth/);

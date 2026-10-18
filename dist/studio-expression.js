@@ -92,7 +92,7 @@ export function evaluate(ast, context, grid = null) {
     if (!grid) throw Error('Spatial derivatives are not allowed here.');
     const a = evaluate(ast.args[0], context, grid);
     if (typeof a === 'number') return 0;
-    return grid.derivative(a, ast.name, ast.args[1]?.value);
+    return grid.derivative(a, ast.name, ast.args[1]?.value, ast.args[0], context);
   }
   return mapValues(ast.args.map(arg => evaluate(arg, context, grid)), FUNCTIONS.get(ast.name)[1], size);
 }

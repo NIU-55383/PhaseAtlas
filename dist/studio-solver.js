@@ -1,4 +1,5 @@
 import {FIELD_NAMES, parseExpression, parseParameters, evaluate, derivativeOrder, splitLinear} from './studio-expression.js';
+import {makeBoundedGrid, prepareBounded, simulateBounded, sidesFor} from './studio-bounded.js';
 
 export const SOLVER_VERSION = 'phaseatlas-spectral-1.0.0';
 export const METHOD = 'Fourier pseudospectral discretization; diagonal ETDRK4; half-band projection (|mode| < N/4 per axis); Float64 arithmetic; periodic boundaries.';
@@ -29,6 +30,7 @@ export function fft(re, im, inverse = false) {
 }
 
 export function makeGrid(config) {
+  if(config.boundary && config.boundary !== 'periodic') return makeBoundedGrid(config);
   const {N: n, dimension, Lx, Ly} = config, ny = dimension === 2 ? n : 1, size = n * ny;
   const x = new Float64Array(size), y = new Float64Array(size), kx = new Float64Array(size), ky = new Float64Array(size), mask = new Uint8Array(size);
   const edge = new Uint8Array(size);
@@ -114,7 +116,9 @@ export function validateConfig(raw) {
   if (!raw || typeof raw !== 'object') throw Error('Missing experiment configuration.');
   const c = {title: String(raw.title || 'Custom experiment').slice(0, 100), dimension: Number(raw.dimension), N: Number(raw.N), Lx: Number(raw.Lx), Ly: Number(raw.Ly ?? raw.Lx), T: Number(raw.T), dt: Number(raw.dt), frames: Number(raw.frames ?? 61), parameters: raw.parameters ?? '', boundary: raw.boundary ?? 'periodic'};
   if (![1, 2].includes(c.dimension)) throw Error('Choose a one- or two-dimensional domain.');
-  if (c.boundary !== 'periodic') throw Error('This solver supports periodic boundaries only.');
+  if (!['periodic','nonperiodic','dirichlet','neumann'].includes(c.boundary)) throw Error('Choose periodic or Dirichlet/Neumann boundaries.');
+  const defaultBoundary = c.boundary === 'neumann' ? 'neumann' : 'dirichlet';
+  if(c.boundary !== 'periodic')c.boundary='nonperiodic';
   if (!Number.isInteger(c.N) || c.N < 16 || c.N > (c.dimension === 2 ? 128 : 1024) || (c.N & (c.N - 1))) throw Error('Use a power-of-two grid: 16–1024 in 1D, or 16–128 per axis in 2D.');
   if (![c.Lx, c.Ly].every(n => Number.isFinite(n) && n > 0 && n <= 10000)) throw Error('Domain lengths must be positive and at most 10000.');
   if (![c.T, c.dt].every(n => Number.isFinite(n) && n > 0) || c.T > 100000 || c.dt > c.T) throw Error('Require 0 < time step ≤ end time ≤ 100000.');
@@ -122,7 +126,16 @@ export function validateConfig(raw) {
   if (!Array.isArray(raw.fields) || raw.fields.length < 1 || raw.fields.length > 3) throw Error('Use one to three real-valued fields: u, v, w.');
   c.fields = raw.fields.map((f, i) => {
     if (!f || typeof f.rhs !== 'string' || typeof f.initial !== 'string' || (f.exact && typeof f.exact !== 'string')) throw Error('Every field needs a right-hand side and initial expression.');
-    return {name: FIELD_NAMES[i], rhs: f.rhs.trim(), initial: f.initial.trim(), exact: (f.exact || '').trim()};
+    const field={name: FIELD_NAMES[i], rhs: f.rhs.trim(), initial: f.initial.trim(), exact: (f.exact || '').trim()};
+    if(c.boundary !== 'periodic'){
+      field.boundaries={};
+      for(const side of sidesFor(c.dimension)){
+        const bc=f.boundaries?.[side] ?? (['dirichlet','neumann'].includes(raw.boundary)?{type:defaultBoundary,value:'0'}:null);
+        if(!bc||!['dirichlet','neumann'].includes(bc.type)||typeof bc.value!=='string')throw Error(`Specify the ${side} boundary of field ${field.name}.`);
+        field.boundaries[side]={type:bc.type,value:bc.value.trim()};
+      }
+    }
+    return field;
   });
   const steps = Math.ceil(c.T / c.dt);
   if (steps > 40000 || steps * c.N ** c.dimension * c.fields.length > 90000000) throw Error('This run exceeds the browser work limit. Reduce duration or grid size, or increase the time step only after checking accuracy.');
@@ -131,7 +144,9 @@ export function validateConfig(raw) {
 }
 
 export function prepare(raw) {
-  const config = validateConfig(raw), grid = makeGrid(config), parameters = parseParameters(config.parameters);
+  const config = validateConfig(raw);
+  if(config.boundary!=='periodic')return prepareBounded(config);
+  const grid = makeGrid(config), parameters = parseParameters(config.parameters);
   const constants = {...parameters, Lx: config.Lx, Ly: config.Ly};
   const names = config.fields.map(f => f.name), space = ['x', ...(config.dimension === 2 ? ['y'] : []), ...Object.keys(constants)];
   const warnings = [], operators = [];
@@ -165,7 +180,9 @@ function combine(parts, size) {
 }
 
 export async function simulate(raw, progress = () => {}, yieldTask = () => Promise.resolve()) {
-  const {config, grid, constants, equations, warnings, operators} = prepare(raw);
+  const prepared=prepare(raw);
+  if(prepared.config.boundary!=='periodic')return simulateBounded(prepared,progress,yieldTask);
+  const {config, grid, constants, equations, warnings, operators} = prepared;
   const start = performance.now(), context = {...constants, x: grid.x, y: grid.y, t: 0};
   const steps = Math.ceil(config.T / config.dt), dt = config.T / steps;
   const coeff = equations.map(eq => coefficients(eq.symbol, dt, grid));
@@ -269,12 +286,18 @@ export async function simulate(raw, progress = () => {}, yieldTask = () => Promi
 
 export function compareResults(coarse, refined) {
   const a = coarse.config, b = refined.config;
-  if (a.dimension !== b.dimension || b.N % a.N || a.Lx !== b.Lx || a.Ly !== b.Ly || a.T !== b.T || a.fields.length !== b.fields.length) throw Error('Comparison requires matching domains, fields, final time and nested grids.');
+  if (a.dimension !== b.dimension || b.N % a.N || a.Lx !== b.Lx || a.Ly !== b.Ly || a.T !== b.T || a.fields.length !== b.fields.length || a.boundary !== b.boundary || JSON.stringify(a.fields)!==JSON.stringify(b.fields)||a.parameters!==b.parameters) throw Error('Comparison requires matching equations, boundaries, domains, final time and nested grids.');
   const stride = b.N / a.N, last = coarse.frames.at(-1), fine = refined.frames.at(-1);
   return a.fields.map((field, f) => {
     let error = 0, norm = 0;
     for (let j = 0; j < (a.dimension === 2 ? a.N : 1); j++) for (let i = 0; i < a.N; i++) {
-      const value = fine.values[f][j * stride * b.N + i * stride], delta = last.values[f][j * a.N + i] - value;
+      let value;
+      if(a.boundary==='periodic')value=fine.values[f][j*stride*b.N+i*stride];
+      else {
+        const x=(i+.5)*stride-.5,y=a.dimension===2?(j+.5)*stride-.5:0,x0=Math.floor(x),x1=Math.ceil(x),y0=Math.floor(y),y1=Math.ceil(y),sx=x-x0,sy=y-y0,v=fine.values[f];
+        value=(1-sy)*((1-sx)*v[y0*b.N+x0]+sx*v[y0*b.N+x1])+sy*((1-sx)*v[y1*b.N+x0]+sx*v[y1*b.N+x1]);
+      }
+      const delta = last.values[f][j * a.N + i] - value;
       error += delta ** 2; norm += value ** 2;
     }
     return {field: field.name, rmsDifference: Math.sqrt(error / a.N ** a.dimension), relativeL2: norm > 1e-24 ? Math.sqrt(error / norm) : null};

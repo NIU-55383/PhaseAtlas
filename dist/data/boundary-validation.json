@@ -1,0 +1,98 @@
+{
+  "schema": "phaseatlas-boundary-validation/v1",
+  "createdAt": "2026-10-18T12:46:43.165566+00:00",
+  "browserSolver": "phaseatlas-fv-sbdf2-1.0.0",
+  "scope": "Independent NumPy stencil implementation and SciPy DOP853 on the same finite-volume grid. These comparisons check implementation and time integration, not continuum accuracy or every supported PDE.",
+  "reproduce": [
+    "node tests/boundary_reference_fixtures.mjs",
+    "python research/check_boundary_reference.py"
+  ],
+  "cases": [
+    {
+      "case": "mixed-rod",
+      "N": 32,
+      "dimension": 1,
+      "T": 0.3,
+      "dt": 0.001,
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.4087341164725603,
+          "rms": 0.4986758528131699,
+          "browserRelativeL2Difference": 5.813688818885069e-08
+        }
+      ],
+      "referenceMethod": "SciPy solve_ivp DOP853; NumPy cell-centered finite-volume stencils; rtol=1e-9, atol=1e-11"
+    },
+    {
+      "case": "heated-plate",
+      "N": 16,
+      "dimension": 2,
+      "T": 0.2,
+      "dt": 0.0005,
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.5,
+          "rms": 0.5888682239538356,
+          "browserRelativeL2Difference": 5.0325780116308456e-08
+        }
+      ],
+      "referenceMethod": "SciPy solve_ivp DOP853; NumPy cell-centered finite-volume stencils; rtol=1e-9, atol=1e-11"
+    },
+    {
+      "case": "time-boundary",
+      "N": 32,
+      "dimension": 1,
+      "T": 0.3,
+      "dt": 0.001,
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.3786769271582101,
+          "rms": 0.38589450957664445,
+          "browserRelativeL2Difference": 4.0036501084005364e-07
+        }
+      ],
+      "referenceMethod": "SciPy solve_ivp DOP853; NumPy cell-centered finite-volume stencils; rtol=1e-9, atol=1e-11"
+    },
+    {
+      "case": "neumann-input",
+      "N": 16,
+      "dimension": 1,
+      "T": 0.2,
+      "dt": 0.005,
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.12300781250000002,
+          "rms": 0.14345141906355496,
+          "browserRelativeL2Difference": 2.4148910213563973e-15
+        }
+      ],
+      "referenceMethod": "SciPy solve_ivp DOP853; NumPy cell-centered finite-volume stencils; rtol=1e-9, atol=1e-11"
+    },
+    {
+      "case": "coupled-neumann",
+      "N": 32,
+      "dimension": 1,
+      "T": 0.4,
+      "dt": 0.001,
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.8922084616370562,
+          "rms": 0.8952757566663376,
+          "browserRelativeL2Difference": 1.4860712897001947e-07
+        },
+        {
+          "field": "v",
+          "mean": 0.4892523657803783,
+          "rms": 0.49061519868083425,
+          "browserRelativeL2Difference": 1.9900990218801645e-07
+        }
+      ],
+      "referenceMethod": "SciPy solve_ivp DOP853; NumPy cell-centered finite-volume stencils; rtol=1e-9, atol=1e-11"
+    }
+  ]
+}

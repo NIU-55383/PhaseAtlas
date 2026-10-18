@@ -26,7 +26,7 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(response.data, b"")
 
     def test_worker_modules_have_javascript_mime(self):
-        for url in ("/app.js", "/worker.js", "/science.js", "/refinement.js", "/studio.js", "/studio-worker.js", "/studio-solver.js", "/studio-expression.js", "/studio-presets.js"):
+        for url in ("/app.js", "/worker.js", "/science.js", "/refinement.js", "/studio.js", "/studio-worker.js", "/studio-solver.js", "/studio-bounded.js", "/studio-expression.js", "/studio-presets.js"):
             with self.subTest(url=url), self.client.get(url) as response:
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.mimetype, "text/javascript")

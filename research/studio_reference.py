@@ -1,7 +1,8 @@
 """Independent small-grid check of a PhaseAtlas Studio JSON export.
 
-Uses NumPy FFTs and SciPy solve_ivp (DOP853 or BDF), not the browser's ETDRK4
-implementation. The periodic grid and half-band projection are held fixed;
+Uses NumPy FFTs (periodic) or independently implemented finite-volume stencils
+(Dirichlet/Neumann) and SciPy solve_ivp (DOP853 or BDF), not the browser's
+ETDRK4/SBDF2 implementation. The spatial discretization is held fixed;
 agreement therefore checks time integration, not continuum convergence.
 
     python studio_reference.py experiment.json --output comparison.json
@@ -74,7 +75,7 @@ def evaluate(node, context, derivative=None):
     if name in DERIVATIVES:
         if derivative is None:
             raise ValueError('Derivatives are not allowed here.')
-        return derivative(args[0], name, args[1] if len(args) > 1 else None)
+        return derivative(args[0], name, args[1] if len(args) > 1 else None, node.args[0])
     return FUNCTIONS[name](*args)
 
 
@@ -86,8 +87,10 @@ def run(document, method='DOP853'):
         raise ValueError('Use 1D or 2D and one to three fields.')
     if n < 16 or n & (n-1) or n > (128 if dimension == 1 else 32):
         raise ValueError('Independent reference limit: power-of-two N = 16–128 in 1D, 16–32 in 2D. Export a smaller-grid run first.')
-    if config.get('boundary', 'periodic') != 'periodic':
-        raise ValueError('Periodic boundaries are required.')
+    boundary = config.get('boundary', 'periodic')
+    if boundary not in {'periodic', 'nonperiodic', 'dirichlet', 'neumann'}:
+        raise ValueError('Choose periodic or Dirichlet/Neumann boundaries.')
+    bounded = boundary != 'periodic'
     lx, ly, end, dt = (float(config[k]) for k in ('Lx', 'Ly', 'T', 'dt'))
     if not all(math.isfinite(v) and v > 0 for v in (lx, ly, end, dt)) or dt > end or end/dt > 40000:
         raise ValueError('Invalid domain or time settings.')
@@ -102,11 +105,11 @@ def run(document, method='DOP853'):
         if not math.isfinite(value): raise ValueError('Non-finite parameter.')
         constants[match[1]] = value
     constants.update(Lx=lx, Ly=ly)
-    x = -lx/2 + np.arange(n)*lx/n
+    x = -lx/2 + (np.arange(n) + (0.5 if bounded else 0))*lx/n
     kx = 2*np.pi*np.fft.fftfreq(n, d=lx/n)
     modes = np.fft.fftfreq(n)*n
     if dimension == 2:
-        y = -ly/2 + np.arange(n)*ly/n
+        y = -ly/2 + (np.arange(n) + (0.5 if bounded else 0))*ly/n
         x, y = np.meshgrid(x, y)
         kx, ky = np.meshgrid(kx, 2*np.pi*np.fft.fftfreq(n, d=ly/n))
         mx, my = np.meshgrid(modes, modes)
@@ -117,6 +120,35 @@ def run(document, method='DOP853'):
     shape = x.shape
     context = dict(constants, x=x, y=y)
 
+    boundaries = []
+    sides = ('left', 'right', 'bottom', 'top') if dimension == 2 else ('left', 'right')
+    if bounded:
+        for f in fields:
+            edges = {}
+            for side in sides:
+                data = f.get('boundaries', {}).get(side)
+                if data is None and boundary in {'dirichlet', 'neumann'}:
+                    data = {'type': boundary, 'value': '0'}
+                if not data or data.get('type') not in {'dirichlet', 'neumann'}:
+                    raise ValueError(f'Missing or invalid {side} boundary.')
+                edges[side] = (data['type'], parse(data['value']))
+            boundaries.append(edges)
+
+    def boundary_values(t):
+        result = []
+        for edges in boundaries:
+            output = {}
+            for side, (_, formula) in edges.items():
+                if side in ('left', 'right'):
+                    bx, by = (-lx/2 if side == 'left' else lx/2), (y[:, 0] if dimension == 2 else 0)
+                else:
+                    bx, by = x[0, :], (-ly/2 if side == 'bottom' else ly/2)
+                output[side] = evaluate(formula, dict(constants, x=bx, y=by, t=t))
+                if not np.all(np.isfinite(output[side])):
+                    raise ValueError('Non-finite boundary data.')
+            result.append(output)
+        return result
+
     def as_field(value):
         result = np.broadcast_to(np.asarray(value, dtype=float), shape).copy()
         if not np.all(np.isfinite(result)):
@@ -124,9 +156,11 @@ def run(document, method='DOP853'):
         return result
 
     def project(value):
+        if bounded:
+            return as_field(value)
         return np.fft.ifftn(np.fft.fftn(as_field(value))*mask).real
 
-    def derivative(value, name, order):
+    def derivative(value, name, order, source=None):
         if name in {'Dx', 'Dy', 'D'} and (order not in (1, 2, 3, 4)):
             raise ValueError('Derivative orders must be 1–4.')
         if name == 'Dy' and dimension == 1:
@@ -136,6 +170,38 @@ def run(document, method='DOP853'):
         else: symbol = (1j*(ky if name == 'Dy' else kx))**int(order)
         return np.fft.ifftn(np.fft.fftn(as_field(value))*symbol).real
 
+    def finite_volume_derivative(value, name, order, source, data):
+        names = ('u', 'v', 'w')[:len(fields)]
+        if not isinstance(source, ast.Name) or source.id not in names:
+            raise ValueError('Bounded derivatives must act directly on a field.')
+        if name == 'biharm' or name != 'lap' and order not in (1, 2):
+            raise ValueError('Bounded derivatives support orders one and two.')
+        if name == 'Dy' and dimension != 2:
+            raise ValueError('Dy requires 2D.')
+        index = names.index(source.id)
+        v = as_field(value)
+
+        def direction(axis, degree):
+            h = lx/n if axis == -1 else ly/n
+            low, high = ('left', 'right') if axis == -1 else ('bottom', 'top')
+            first, last = np.take(v, 0, axis=axis), np.take(v, -1, axis=axis)
+            ghosts = []
+            for side, cell, neighbor in ((low, first, np.take(v, 1, axis=axis)),
+                                         (high, last, np.take(v, -2, axis=axis))):
+                target = data[index][side]
+                if boundaries[index][side][0] == 'dirichlet':
+                    ghost = 8*target/3 - 2*cell + neighbor/3 if degree == 1 else 2*target-cell
+                else:
+                    ghost = cell+h*target
+                ghosts.append(np.expand_dims(ghost, axis))
+            padded = np.concatenate((ghosts[0], v, ghosts[1]), axis=axis)
+            a, b = np.take(padded, np.arange(n), axis=axis), np.take(padded, np.arange(2, n+2), axis=axis)
+            return (b-a)/(2*h) if degree == 1 else (a-2*v+b)/h**2
+
+        if name == 'lap':
+            return direction(-1, 2)+(direction(0, 2) if dimension == 2 else 0)
+        return direction(0 if name == 'Dy' else -1, int(order))
+
     equations = [parse(f['rhs']) for f in fields]
     initial = np.stack([project(evaluate(parse(f['initial']), context)) for f in fields])
     full_shape = initial.shape
@@ -143,18 +209,25 @@ def run(document, method='DOP853'):
     def rhs(t, vector):
         current = vector.reshape(full_shape)
         variables = dict(context, t=t, **dict(zip(('u','v','w'), current)))
+        d = derivative
+        if bounded:
+            data = boundary_values(t)
+            d = lambda value, name, order, source: finite_volume_derivative(value, name, order, source, data)
         with np.errstate(over='raise', invalid='raise', divide='raise'):
-            return np.stack([project(evaluate(eq, variables, derivative)) for eq in equations]).ravel()
+            return np.stack([project(evaluate(eq, variables, d)) for eq in equations]).ravel()
 
     solution = solve_ivp(rhs, (0, end), initial.ravel(), method=method,
                          rtol=1e-9, atol=1e-11, max_step=dt, t_eval=[end])
     if not solution.success:
         raise RuntimeError(solution.message)
     values = solution.y[:, -1].reshape(full_shape)
-    report = {'method': f'SciPy solve_ivp {method}; NumPy FFT; rtol=1e-9, atol=1e-11',
-              'scope': 'Same periodic grid and half-band projection. This is an independent time-integration check, not a continuum error bound.',
+    spatial_method = 'NumPy cell-centered finite-volume stencils' if bounded else 'NumPy FFT'
+    report = {'method': f'SciPy solve_ivp {method}; {spatial_method}; rtol=1e-9, atol=1e-11',
+              'scope': ('Same cell-centered grid and boundary closures.' if bounded else 'Same periodic grid and half-band projection.')+' This is an independent time-integration check, not a continuum error bound.',
               'config': config, 'rhsEvaluations': solution.nfev, 'fields': []}
     exported = document.get('frames', [])
+    if exported and not math.isclose(float(exported[-1]['t']), end, rel_tol=1e-10, abs_tol=1e-12):
+        raise ValueError('Exported final time does not match the configuration.')
     for i, v in enumerate(values):
         row = {'field': ('u','v','w')[i], 'mean': float(np.mean(v)), 'rms': float(np.sqrt(np.mean(v*v)))}
         if exported:
