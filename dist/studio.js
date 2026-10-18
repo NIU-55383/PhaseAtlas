@@ -2,6 +2,7 @@ import {PRESETS, presetConfig} from './studio-presets.js';
 import {prepare, makeGrid, validateConfig} from './studio-solver.js';
 import {parseParameters, parseExpression, evaluate} from './studio-expression.js';
 import {boundaryWeights} from './studio-fourth.js';
+import {attachResearchWorkbench} from './research-bridge.mjs';
 
 const $ = id => document.getElementById(id);
 const colors = ['#0000cd', '#c96428', '#8275bc'];
@@ -38,13 +39,15 @@ function editorFields(count, values = []) {
     edges.innerHTML=`<summary>Boundary data for ${name}</summary>`;
     for(const side of ['left','right','bottom','top']){
       const row=document.createElement('div');row.className='boundary-row';row.dataset.side=side;
-      row.innerHTML=`<label>${side[0].toUpperCase()+side.slice(1)} edge<select id="bc-${name}-${side}-type" aria-label="${name} ${side} boundary type"><option value="dirichlet">Dirichlet · value</option><option value="neumann">Neumann · ∂n</option></select></label><label>Boundary expression<input id="bc-${name}-${side}-value" spellcheck="false" aria-label="${name} ${side} boundary expression"></label>`;
+      row.innerHTML=`<label>${side[0].toUpperCase()+side.slice(1)} edge<select id="bc-${name}-${side}-type" aria-label="${name} ${side} boundary type"><option value="dirichlet">Dirichlet · value</option><option value="neumann">Neumann · ∂n</option><option value="robin">Robin · αu + β∂n u</option></select></label><label>Target g<input id="bc-${name}-${side}-value" spellcheck="false" aria-label="${name} ${side} boundary expression"></label><div class="robin-weights hidden"><label>α · value coefficient<input id="bc-${name}-${side}-alpha" spellcheck="false" aria-label="${name} ${side} Robin alpha"></label><label>β · normal coefficient<input id="bc-${name}-${side}-beta" spellcheck="false" aria-label="${name} ${side} Robin beta"></label><p class="helper">αu + β∂n u = g. Constant parameters; α, β ≥ 0, not both zero.</p></div>`;
       edges.append(row);
     }
     wrapper.append(edges);
     for(const side of ['left','right','bottom','top']){
       $(`bc-${name}-${side}-type`).value=values[i]?.boundaries?.[side]?.type??($('boundary-mode').value==='neumann'?'neumann':'dirichlet');
       $(`bc-${name}-${side}-value`).value=values[i]?.boundaries?.[side]?.value??'0';
+      $(`bc-${name}-${side}-alpha`).value=values[i]?.boundaries?.[side]?.alpha??'1';
+      $(`bc-${name}-${side}-beta`).value=values[i]?.boundaries?.[side]?.beta??'1';
     }
     const fourth=document.createElement('details');fourth.className='fourth-boundary-editor';fourth.open=true;fourth.innerHTML=`<summary>Four boundary conditions for ${name}</summary><p class="helper">Two independent rows at each endpoint. ∂n = −∂x at left and +∂x at right; odd derivative signs reverse at the left endpoint.</p>`;
     for(const side of ['left','right']){
@@ -65,17 +68,18 @@ function editorFields(count, values = []) {
   }
   boundaryDisplay();
 }
-function readFields() { return ['u','v','w'].slice(0, Number($('field-count').value)).map(name => ({rhs: $(`rhs-${name}`)?.value || '0', initial: $(`initial-${name}`)?.value || '0', exact: $(`exact-${name}`)?.value || '', boundaries:Object.fromEntries(['left','right','bottom','top'].map(side=>[side,{type:$(`bc-${name}-${side}-type`)?.value??'dirichlet',value:$(`bc-${name}-${side}-value`)?.value??'0',...(['left','right'].includes(side)?{conditions:[0,1].map(k=>({coefficients:[0,1,2,3].map(j=>$(`fourth-${name}-${side}-${k}-a${j}`)?.value??(j===k?'1':'0')),value:$(`fourth-${name}-${side}-${k}-value`)?.value??'0'}))}:{})}]))})); }
+function readFields() { return ['u','v','w'].slice(0, Number($('field-count').value)).map(name => ({rhs: $(`rhs-${name}`)?.value || '0', initial: $(`initial-${name}`)?.value || '0', exact: $(`exact-${name}`)?.value || '', boundaries:Object.fromEntries(['left','right','bottom','top'].map(side=>[side,{type:$(`bc-${name}-${side}-type`)?.value??'dirichlet',value:$(`bc-${name}-${side}-value`)?.value??'0',alpha:$(`bc-${name}-${side}-alpha`)?.value??'1',beta:$(`bc-${name}-${side}-beta`)?.value??'1',...(['left','right'].includes(side)?{conditions:[0,1].map(k=>({coefficients:[0,1,2,3].map(j=>$(`fourth-${name}-${side}-${k}-a${j}`)?.value??(j===k?'1':'0')),value:$(`fourth-${name}-${side}-${k}-value`)?.value??'0'}))}:{})}]))})); }
 function fourthRowDisplay(prefix){$(`${prefix}-order`).closest('.fourth-condition').querySelector('.fourth-weights').classList.toggle('hidden',$(`${prefix}-order`).value!=='custom');}
 function boundaryDisplay(){
   const periodic=$('boundary-mode').value==='periodic',fourth=$('boundary-mode').value==='fourth-order',two=$('dimension').value==='2';
   document.querySelectorAll('.boundary-editor').forEach(el=>el.classList.toggle('hidden',periodic||fourth));
   document.querySelectorAll('.fourth-boundary-editor').forEach(el=>el.classList.toggle('hidden',!fourth));
   document.querySelectorAll('.boundary-row').forEach(el=>el.classList.toggle('hidden',!two&&['bottom','top'].includes(el.dataset.side)));
+  document.querySelectorAll('.boundary-editor .boundary-row').forEach(el=>el.querySelector('.robin-weights').classList.toggle('hidden',el.querySelector('select').value!=='robin'));
   $('boundary-help').classList.toggle('hidden',periodic||fourth);$('fourth-help').classList.toggle('hidden',!fourth);$('dimension').querySelector('option[value="2"]').disabled=fourth;
   $('domain-help').textContent=periodic?'x ∈ [−Lx/2, Lx/2). Opposite edges are joined.':'x ∈ [−Lx/2, Lx/2]'+(two?', y ∈ [−Ly/2, Ly/2].':'.')+' Values are computed at cell centers; each edge has its own boundary data.';
 }
-const boundaryLabel=c=>c.boundary==='periodic'?'periodic':c.boundary==='fourth-order'?'fourth-order boundary conditions':'Dirichlet / Neumann';
+const boundaryLabel=c=>c.boundary==='periodic'?'periodic':c.boundary==='fourth-order'?'fourth-order boundary conditions':'Dirichlet / Neumann / Robin';
 function dimensions() {
   const two = $('dimension').value === '2'; $('length-y-label').classList.toggle('hidden', !two);
   [...$('grid-size').options].forEach(o => { o.disabled = two && Number(o.value) > 128; });
@@ -316,9 +320,9 @@ function shareLink(){if(!result)return;const bytes=new TextEncoder().encode(JSON
 $('preset').add(new Option('Custom / imported experiment',''));
 for(const p of PRESETS)$('preset').add(new Option(p.label,p.id));
 $('preset').onchange=()=>{const p=PRESETS.find(p=>p.id===$('preset').value);if(!p)return;applyConfig(presetConfig(p.id),p.id);$('preset-description').textContent=p.description;changed();};
-$('boundary-mode').onchange=()=>{const mode=$('boundary-mode').value;if(mode==='dirichlet'||mode==='neumann'){document.querySelectorAll('.boundary-editor .boundary-row select').forEach(el=>{el.value=mode;});document.querySelectorAll('.boundary-editor .boundary-row input').forEach(el=>{el.value='0';});}if(mode==='fourth-order')$('dimension').value='1';dimensions();boundaryDisplay();changed();};
+$('boundary-mode').onchange=()=>{const mode=$('boundary-mode').value;if(mode==='dirichlet'||mode==='neumann'){document.querySelectorAll('.boundary-editor .boundary-row select').forEach(el=>{el.value=mode;});document.querySelectorAll('.boundary-editor .boundary-row input[id$="-value"]').forEach(el=>{el.value='0';});}if(mode==='fourth-order')$('dimension').value='1';dimensions();boundaryDisplay();changed();};
 document.querySelector('#field-editors').addEventListener('input',e=>{
-  if(e.target.closest('.boundary-editor .boundary-row'))$('boundary-mode').value='nonperiodic';
+  if(e.target.closest('.boundary-editor .boundary-row')){$('boundary-mode').value='nonperiodic';boundaryDisplay();}
   if(e.target.closest('.fourth-condition')){e.target.closest('.fourth-endpoint').querySelector('.fourth-pair').value='custom';if(e.target.classList.contains('fourth-coefficient')){const prefix=e.target.closest('.fourth-condition').dataset.prefix;$(`${prefix}-order`).value='custom';fourthRowDisplay(prefix);}}
 });
 document.querySelector('#field-editors').addEventListener('change',e=>{
@@ -347,3 +351,4 @@ if(location.hash.startsWith('#experiment=')) {
   try{const encoded=location.hash.slice(12);if(encoded.length>16000)throw Error('The shared configuration is too large.');const text=atob(encoded.replace(/-/g,'+').replace(/_/g,'/'));initial=validateConfig(JSON.parse(new TextDecoder().decode(Uint8Array.from(text,c=>c.charCodeAt(0)))));$('preset-description').textContent='Shared experiment. Review the configuration and click Run; shared links never start computations automatically.';applyConfig(initial);status('Shared configuration loaded. Review the equations, then run.');}
   catch(e){applyConfig(initial);status('Could not load the shared experiment: '+e.message,true);}
 } else {applyConfig(initial,'heat');run();}
+attachResearchWorkbench(()=>prepare(readConfig()).config,message=>status(message,true));

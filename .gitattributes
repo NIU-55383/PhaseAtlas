@@ -1,0 +1,7 @@
+# Generated documents and media must retain their original bytes on every host.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webm binary
+*.zip binary

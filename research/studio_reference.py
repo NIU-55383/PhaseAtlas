@@ -1,7 +1,7 @@
 """Independent small-grid check of a PhaseAtlas Studio JSON export.
 
 Uses NumPy FFTs (periodic) or independently implemented finite-volume stencils
-(Dirichlet/Neumann), or quartic boundary reconstruction with finite differences
+(Dirichlet/Neumann/passive Robin), or quartic boundary reconstruction with finite differences
 (fourth-order 1D), and SciPy solve_ivp (DOP853 or BDF), not the browser's
 ETDRK4/SBDF2 implementation. The spatial discretization is held fixed;
 agreement therefore checks time integration, not continuum convergence.
@@ -137,21 +137,28 @@ def run(document, method='auto'):
                 data = f.get('boundaries', {}).get(side)
                 if data is None and boundary in {'dirichlet', 'neumann'}:
                     data = {'type': boundary, 'value': '0'}
-                if not data or data.get('type') not in {'dirichlet', 'neumann'}:
+                if not data or data.get('type') not in {'dirichlet', 'neumann', 'robin'}:
                     raise ValueError(f'Missing or invalid {side} boundary.')
-                edges[side] = (data['type'], parse(data['value']))
+                alpha, beta, scale = (1., 0., 1.) if data['type'] == 'dirichlet' else (0., 1., 1.)
+                if data['type'] == 'robin':
+                    alpha, beta = (float(evaluate(parse(data[key]), constants)) for key in ('alpha', 'beta'))
+                    if not all(math.isfinite(q) and q >= 0 for q in (alpha, beta)) or max(alpha, beta) == 0:
+                        raise ValueError('Passive Robin requires finite non-negative alpha and beta, not both zero.')
+                    scale = max(alpha, beta)
+                    alpha, beta = alpha/scale, beta/scale
+                edges[side] = (alpha, beta, parse(data['value']), scale)
             boundaries.append(edges)
 
     def boundary_values(t):
         result = []
         for edges in boundaries:
             output = {}
-            for side, (_, formula) in edges.items():
+            for side, (_, _, formula, scale) in edges.items():
                 if side in ('left', 'right'):
                     bx, by = (-lx/2 if side == 'left' else lx/2), (y[:, 0] if dimension == 2 else 0)
                 else:
                     bx, by = x[0, :], (-ly/2 if side == 'bottom' else ly/2)
-                output[side] = evaluate(formula, dict(constants, x=bx, y=by, t=t))
+                output[side] = evaluate(formula, dict(constants, x=bx, y=by, t=t))/scale
                 if not np.all(np.isfinite(output[side])):
                     raise ValueError('Non-finite boundary data.')
             result.append(output)
@@ -197,10 +204,11 @@ def run(document, method='auto'):
             for side, cell, neighbor in ((low, first, np.take(v, 1, axis=axis)),
                                          (high, last, np.take(v, -2, axis=axis))):
                 target = data[index][side]
-                if boundaries[index][side][0] == 'dirichlet':
-                    ghost = 8*target/3 - 2*cell + neighbor/3 if degree == 1 else 2*target-cell
-                else:
-                    ghost = cell+h*target
+                alpha, beta = boundaries[index][side][:2]
+                # Independent NumPy implementation of a*u_face+b*normal=g.
+                normal = ((8*target-alpha*(9*cell-neighbor))/(8*beta+3*alpha*h)
+                          if degree == 1 else (target-alpha*cell)/(beta+alpha*h/2))
+                ghost = cell+h*normal
                 ghosts.append(np.expand_dims(ghost, axis))
             padded = np.concatenate((ghosts[0], v, ghosts[1]), axis=axis)
             a, b = np.take(padded, np.arange(n), axis=axis), np.take(padded, np.arange(2, n+2), axis=axis)

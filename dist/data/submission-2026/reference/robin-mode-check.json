@@ -1,0 +1,81 @@
+{
+  "method": "SciPy solve_ivp BDF; NumPy cell-centered finite-volume stencils; rtol=1e-9, atol=1e-11",
+  "scope": "Same cell-centered grid and boundary closures. This is an independent time-integration check, not a continuum error bound.",
+  "config": {
+    "title": "Robin cooling: exact eigenmode",
+    "dimension": 1,
+    "N": 32,
+    "Lx": 2,
+    "Ly": 1,
+    "T": 0.3,
+    "dt": 0.0002,
+    "frames": 11,
+    "parameters": "nu=0.1; k=1",
+    "boundary": "nonperiodic",
+    "fields": [
+      {
+        "name": "u",
+        "rhs": "nu*lap(u)",
+        "initial": "cos(k*x)",
+        "exact": "exp(-nu*k^2*t)*cos(k*x)",
+        "boundaries": {
+          "left": {
+            "type": "robin",
+            "value": "0",
+            "alpha": "k*sin(k*Lx/2)/cos(k*Lx/2)",
+            "beta": "1"
+          },
+          "right": {
+            "type": "robin",
+            "value": "0",
+            "alpha": "k*sin(k*Lx/2)/cos(k*Lx/2)",
+            "beta": "1"
+          }
+        }
+      }
+    ]
+  },
+  "rhsEvaluations": 3008,
+  "fields": [
+    {
+      "field": "u",
+      "mean": 0.8167493354759201,
+      "rms": 0.8277254763421679,
+      "browserRelativeL2Difference": 2.173626653095085e-10,
+      "finalValues": [
+        0.5496339048652723,
+        0.5985072022632609,
+        0.6450456564969504,
+        0.6890673522646068,
+        0.7304000704347806,
+        0.7688820302835656,
+        0.8043625853737484,
+        0.8367028570986667,
+        0.8657762992215737,
+        0.8914691945914387,
+        0.9136810892917477,
+        0.9323251698551612,
+        0.9473285873539202,
+        0.9586327298230034,
+        0.9661934426616813,
+        0.9699811957353431,
+        0.9699811957353431,
+        0.9661934426616813,
+        0.9586327298230034,
+        0.9473285873539202,
+        0.9323251698551612,
+        0.9136810892917477,
+        0.8914691945914387,
+        0.8657762992215737,
+        0.8367028570986667,
+        0.8043625853737484,
+        0.7688820302835656,
+        0.7304000704347806,
+        0.6890673522646068,
+        0.6450456564969504,
+        0.5985072022632609,
+        0.5496339048652723
+      ]
+    }
+  ]
+}

@@ -141,8 +141,12 @@ export function validateConfig(raw) {
           })};
           continue;
         }
-        if(!bc||!['dirichlet','neumann'].includes(bc.type)||typeof bc.value!=='string')throw Error(`Specify the ${side} boundary of field ${field.name}.`);
+        if(!bc||!['dirichlet','neumann','robin'].includes(bc.type)||typeof bc.value!=='string')throw Error(`Specify the ${side} boundary of field ${field.name}.`);
         field.boundaries[side]={type:bc.type,value:bc.value.trim()};
+        if(bc.type==='robin'){
+          if(typeof bc.alpha!=='string'||typeof bc.beta!=='string')throw Error('Robin boundaries need alpha and beta coefficient expressions: alpha*u + beta*normal_derivative = value.');
+          field.boundaries[side].alpha=bc.alpha.trim();field.boundaries[side].beta=bc.beta.trim();
+        }
       }
     }
     return field;

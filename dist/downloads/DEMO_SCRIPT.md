@@ -1,58 +1,29 @@
-# PhaseAtlas: four-minute demo script
+# PhaseAtlas: current presentation script
 
-This is a presentation draft. Do not claim publication, experimental calibration, autonomous discovery, or a new stability theorem. The built-in WebM export supplies short scientific-animation clips; the complete four-minute narrated submission still requires the presenter to record their voice and screen.
+Author: Niu Te, Imperial College London. Baseline: 18 October 2026.
 
-## 0:00-0:30 | A researcher's problem
+0:00-0:35 | The problem
+Homepage: show the real cooling animation.
+A PDE animation can look convincing even when its boundary conditions or numerical resolution are wrong. I built PhaseAtlas to connect the picture to the evidence behind it. It is a browser workbench for researchers who want to edit a model, inspect its dynamics and share a calculation that another person can check.
 
-Screen: English Front laboratory, default cubic run, animation paused near its final time.
+0:35-1:15 | A practical question
+Cooling case: open its model in the workbench, run and play.
+Start with a hot rod exchanging heat with its surroundings. The Robin boundary condition represents that exchange. I can change the diffusion coefficient or the exchange coefficient, run the equation and inspect the temperature through time. The model, initial data and boundary conditions remain visible. This is a dimensionless model study; I am not claiming it predicts a particular material without calibration.
 
-“A traveling front can look almost unchanged while small disturbances grow dramatically. A smooth animation alone cannot tell us whether the formula is correct, whether the solver is accurate, or what kind of stability we are observing. PhaseAtlas puts those questions in one reproducible workspace.”
+1:15-1:55 | Check the calculation
+Robin benchmark: run the three-space-level study.
+To test the boundary implementation, I use a heat-equation mode with a known exact solution. I hold the time step fixed and refine the grid from sixteen to thirty-two to sixty-four cells. The measured errors decrease, and the observed order is approximately two. A separate balance audit compares the thermal-content change with the input through the walls. Neither a smooth animation nor a small algebraic residual is used as an accuracy certificate.
 
-Presenter note: start with the researcher's problem before introducing the full PDE.
+1:55-2:35 | Compare a family of experiments
+Show the cooling parameter map; select one cell and replay.
+Now I turn one run into a parameter question: how much heat remains after a fixed time? Each map cell stores a real numerical trajectory. I can choose a mean, a local probe or a threshold event. Failed runs stay visible, and an event that was not observed is left missing. This is a finite-time parameter scan, not a bifurcation diagram.
 
-## 0:30-1:20 | A real experiment, not a rendered illusion
+2:35-3:15 | The original research connection
+Front laboratory: play disturbance map and point to norm curves.
+The second case comes from my earlier work on a fourth-order travelling front. PhaseAtlas retains that mathematical structure while letting me distinguish motion from deformation. Global, local and weighted norms can behave differently. The general Studio also lets a researcher specify two linear boundary conditions at each end for supported fourth-order equations. These calculations support research questions; they do not prove nonlinear stability.
 
-Screen: rewind and play; point to the orange disturbance, fixed-scale heatmap and three norm curves. Switch moving/laboratory coordinates once.
+3:15-3:55 | Reuse and contribution
+Evidence export, article and reproducibility download.
+The contribution is a connected workflow: editable equations, visual experiments, numerical checks and a portable research record. The present suite passes ninety mathematical and numerical tests, with an independent Python reference for selected problems. Computation runs on the user's device. I used AI assistance in development, while the solver itself is deterministic and needs no language-model API. The package identifies its pre-event baseline so later hackathon contributions can be recorded honestly. I am Niu Te from Imperial College London. This is PhaseAtlas: from PDE animations to reproducible numerical evidence.
 
-“Our reference is a known cubic fourth-order front connected to my earlier MAE03 project. The platform evolves a localized wave packet with a real implicit-explicit solver. We show the original field and the disturbance separately. The heatmap keeps one color scale, so growth is not hidden by automatic normalization. Global, local and weighted norms can tell different stories. The weighted decay shown here is not a nonlinear orbital stability theorem.”
-
-“Everything runs in a browser worker, without sending research data to an external service.”
-
-Presenter note: emphasize computation and the fixed color scale. Do not claim automatic proof of convective stability.
-
-## 1:20-2:00 | Find an error before building on it
-
-Screen: Verify a solution. Reverse the speed sign, show nonzero residual, restore coefficients. Briefly show the N=3/2 explanation.
-
-“Before trusting the experiment, we audit the formula. Reversing one speed sign produces a large residual. Restoring it brings the residual back to roundoff. An independent SymPy script verifies the exact identities. The half-integer exponent is legitimate here because its base stays strictly positive on the whole real line.”
-
-Presenter note: use the deliberate error to make the practical value clear to a nonspecialist audience.
-
-## 2:00-2:40 | Explore without overstating evidence
-
-Screen: Spectrum & atlas. Move alpha slightly, show old-profile residual, then compute a candidate front and phase portrait.
-
-“The parameter atlas shows an analytic far-field spectral bound. It is deliberately labeled separately from front existence. When coefficients change, the old exact profile is no longer silently treated as a solution. We compute a new numerical shooting candidate and expose its tail indicator. This supplies research hypotheses, not fabricated proofs.”
-
-## 2:40-3:25 | Make it reusable
-
-Screen: Evidence & export. Run refinement, show the measured discrepancy and verification ledger. Download JSON, then import it. Point to Python toolkit and SVG export.
-
-“Another researcher can refine the mesh, inspect boundary contamination, export every time frame, and reproduce the run using an independently assembled SciPy implementation. The default nonlinear experiment agrees with that reference to about 0.0191 percent in the final perturbation's relative L2 norm on the same spatial mesh. Separate tests check spatial and time convergence. Figures are available as editable SVG, raw CSV, and scientific animations.”
-
-Presenter note: 0.0191% compares independent integrators and matrix assembly on the same spatial mesh; it is not the total error relative to the continuous PDE.
-
-## 3:25-4:00 | Contribution and next research question
-
-Screen: Theory & research, then return to the front animation.
-
-“The immediate contribution is a scientific software workflow: exact structure, controlled computation, visual explanation, and reproducible evidence. It can support wave researchers, solver developers and research teaching. My earlier mathematical work is the starting point; this software and its validation workflow are the new deliverable.”
-
-“The next paper will pursue a new mathematical result, such as persistence of a front family and a rigorous local-response theory. The platform helps discover and test that question. It does not pretend that the interface itself proves the theorem.”
-
-## Submission notes
-
-The presentation is designed for a four-minute demo and a one-page write-up. Verify the organizer's current requirements and prior-work policy before submission. Hosting, licensing and author details are managed by the project owner.
-
-Official source: https://llmhackathon.github.io/agenda/
-
+See dist/submission-2026/PhaseAtlas_Submission_Kit.pdf for current requirements, caveats and the two-minute alternative.

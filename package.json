@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/science.test.mjs tests/studio.test.mjs tests/boundaries.test.mjs tests/fourth.test.mjs"
+    "test": "node --test tests/science.test.mjs tests/studio.test.mjs tests/boundaries.test.mjs tests/fourth.test.mjs tests/evidence.test.mjs tests/research.test.mjs tests/robin.test.mjs"
   },
   "description": "A reproducible nonlinear wave research workbench"
 }

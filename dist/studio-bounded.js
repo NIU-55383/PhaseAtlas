@@ -1,7 +1,7 @@
 import {parseExpression, parseParameters, evaluate, derivativeOrder, splitLinear} from './studio-expression.js';
 
-export const BOUNDED_VERSION = 'phaseatlas-fv-sbdf2-1.0.0';
-export const BOUNDED_METHOD = 'Cell-centered finite volumes for diagonal diffusion; centered interior first derivatives with boundary closures; SBDF2 with backward-Euler startup; implicit diffusion solved by preconditioned conjugate gradients. Dirichlet/Neumann faces; no periodic extension or spectral filter.';
+export const BOUNDED_VERSION = 'phaseatlas-fv-sbdf2-1.1.0';
+export const BOUNDED_METHOD = 'Cell-centered finite volumes for diagonal diffusion; centered interior first derivatives with quadratic boundary closures; SBDF2 with backward-Euler startup; implicit diffusion solved by preconditioned conjugate gradients. Dirichlet/Neumann/passive Robin faces; no periodic extension or spectral filter.';
 export const sidesFor = dimension => dimension === 2 ? ['left','right','bottom','top'] : ['left','right'];
 const norm = a => Math.sqrt(a.reduce((s,v)=>s+v*v,0));
 function check(a) {for(const v of a)if(!Number.isFinite(v)||Math.abs(v)>1e8)throw Error('The bounded-domain computation became non-finite or exceeded the amplitude limit. Reduce the time step and check the model. This is not proof of blow-up.');}
@@ -40,7 +40,18 @@ export function prepareBounded(config) {
     for(const term of split.terms){const [px,py,c]=term;if(px===2&&py===0)diffusion.x+=c;else if(px===0&&py===2)diffusion.y+=c;else if(px+py<=1)linear.push(term);else throw Error('Mixed second derivatives are not supported by the bounded-domain solver.');}
     if(diffusion.x<0||diffusion.y<0)throw Error('Non-periodic diffusion coefficients must be non-negative.');
     const boundaries={};
-    for(const side of sides){const b=f.boundaries?.[side];if(!b||!['dirichlet','neumann'].includes(b.type)||typeof b.value!=='string')throw Error(`Set a Dirichlet value or Neumann outward derivative on the ${side} edge of ${f.name}.`);const formula=parseExpression(b.value,[...space,'t']);if(derivativeOrder(formula))throw Error('Boundary data must be explicit functions of position, time and parameters.');boundaries[side]={type:b.type,formula};}
+    for(const side of sides){
+      const b=f.boundaries?.[side];if(!b||!['dirichlet','neumann','robin'].includes(b.type)||typeof b.value!=='string')throw Error(`Set Dirichlet, Neumann or Robin data on the ${side} edge of ${f.name}.`);
+      const formula=parseExpression(b.value,[...space,'t']);if(derivativeOrder(formula))throw Error('Boundary data must be explicit functions of position, time and parameters.');
+      let alpha=b.type==='dirichlet'?1:0,beta=b.type==='neumann'?1:0,scale=1;
+      if(b.type==='robin'){
+        const coefficient=s=>{const ast=parseExpression(s,Object.keys(constants));if(derivativeOrder(ast))throw Error('Robin coefficients must be constant expressions or parameters.');return evaluate(ast,constants);};
+        alpha=coefficient(b.alpha);beta=coefficient(b.beta);
+        if(!Number.isFinite(alpha)||!Number.isFinite(beta)||alpha<0||beta<0||alpha+beta===0)throw Error('Passive Robin boundaries require finite alpha ≥ 0 and beta ≥ 0, with at least one positive coefficient.');
+        scale=Math.max(alpha,beta);alpha/=scale;beta/=scale;
+      }
+      boundaries[side]={type:b.type,formula,alpha,beta,scale};
+    }
     return {ast,initial,exact,diffusion,linear,remainder:split.remainder,boundaries};
   });
   // Two boundary constraints are not appropriate for a pure first-order transport equation.
@@ -57,7 +68,7 @@ export function boundaryData(prepared,time) {
     const values=new Float64Array(side==='left'||side==='right'?g.ny:g.n);
     for(let k=0;k<values.length;k++){
       const point={...constants,t:time,x:side==='left'?-c.Lx/2:side==='right'?c.Lx/2:-c.Lx/2+(k+.5)*g.hx,y:side==='bottom'?-c.Ly/2:side==='top'?c.Ly/2:c.dimension===2?-c.Ly/2+(k+.5)*g.hy:0};
-      values[k]=evaluate(eq.boundaries[side].formula,point);
+      values[k]=evaluate(eq.boundaries[side].formula,point)/eq.boundaries[side].scale;
     }
     check(values);return [side,values];
   })));
@@ -70,11 +81,9 @@ export function boundedDerivative(values,kind,order,field,prepared,data) {
     const low=axis==='x'?'left':'bottom',high=axis==='x'?'right':'top';
     for(let j=0;j<g.ny;j++)for(let i=0;i<g.n;i++){
       const p=j*g.n+i,k=axis==='x'?i:j,edgeIndex=axis==='x'?j:i,u=values[p];
-      let a=k>0?values[p-stride]:eq.boundaries[low].type==='dirichlet'?2*data[field][low][edgeIndex]-u:u+h*data[field][low][edgeIndex];
-      let b=k<count-1?values[p+stride]:eq.boundaries[high].type==='dirichlet'?2*data[field][high][edgeIndex]-u:u+h*data[field][high][edgeIndex];
-      // Quadratic Dirichlet closure for first derivatives at the first/last center.
-      if(degree===1&&k===0&&eq.boundaries[low].type==='dirichlet')a=8/3*data[field][low][edgeIndex]-2*u+values[p+stride]/3;
-      if(degree===1&&k===count-1&&eq.boundaries[high].type==='dirichlet')b=8/3*data[field][high][edgeIndex]-2*u+values[p-stride]/3;
+      const ghost=(side,neighbor)=>{const {alpha,beta}=eq.boundaries[side],target=data[field][side][edgeIndex];return degree===1?u+h*(8*target-alpha*(9*u-neighbor))/(8*beta+3*alpha*h):u+h*(target-alpha*u)/(beta+alpha*h/2);};
+      const a=k>0?values[p-stride]:ghost(low,values[p+stride]);
+      const b=k<count-1?values[p+stride]:ghost(high,values[p-stride]);
       result[p]=degree===1?(b-a)/(2*h):(a-2*u+b)/(h*h);
     }
     return result;
@@ -86,8 +95,9 @@ export function boundedDerivative(values,kind,order,field,prepared,data) {
 function linearSystem(eq,g,alpha,dt) {
   const wx=dt*eq.diffusion.x/g.hx**2,wy=g.ny>1?dt*eq.diffusion.y/g.hy**2:0,diagonal=new Float64Array(g.size);
   for(let j=0;j<g.ny;j++)for(let i=0;i<g.n;i++){
-    const xdiag=i===0?(eq.boundaries.left.type==='dirichlet'?3:1):i===g.n-1?(eq.boundaries.right.type==='dirichlet'?3:1):2;
-    const ydiag=g.ny===1?0:j===0?(eq.boundaries.bottom.type==='dirichlet'?3:1):j===g.ny-1?(eq.boundaries.top.type==='dirichlet'?3:1):2;
+    const edgeDiagonal=(side,h)=>{const b=eq.boundaries[side];return 1+b.alpha*h/(b.beta+b.alpha*h/2);};
+    const xdiag=i===0?edgeDiagonal('left',g.hx):i===g.n-1?edgeDiagonal('right',g.hx):2;
+    const ydiag=g.ny===1?0:j===0?edgeDiagonal('bottom',g.hy):j===g.ny-1?edgeDiagonal('top',g.hy):2;
     diagonal[j*g.n+i]=alpha+wx*xdiag+wy*ydiag;
   }
   function apply(v,out){for(let j=0;j<g.ny;j++)for(let i=0;i<g.n;i++){const p=j*g.n+i;out[p]=diagonal[p]*v[p]-(i>0?wx*v[p-1]:0)-(i<g.n-1?wx*v[p+1]:0)-(j>0?wy*v[p-g.n]:0)-(j<g.ny-1?wy*v[p+g.n]:0);}}
@@ -112,22 +122,23 @@ function solve(system,rhs,guess) {
 
 function boundaryForcing(eq,g,data) {
   const out=new Float64Array(g.size);
-  const add=(side,p,k,h,d)=>{out[p]+=d*(eq.boundaries[side].type==='dirichlet'?2*data[side][k]/h**2:data[side][k]/h);};
+  const add=(side,p,k,h,d)=>{const b=eq.boundaries[side];out[p]+=d*data[side][k]/(h*(b.beta+b.alpha*h/2));};
   for(let j=0;j<g.ny;j++){add('left',j*g.n,j,g.hx,eq.diffusion.x);add('right',j*g.n+g.n-1,j,g.hx,eq.diffusion.x);}
   if(g.ny>1)for(let i=0;i<g.n;i++){add('bottom',i,i,g.hy,eq.diffusion.y);add('top',(g.ny-1)*g.n+i,i,g.hy,eq.diffusion.y);}
   return out;
 }
 
-function boundaryFaces(values,eq,g,data) {
-  const faces={},derivatives={};let rate=0;
+export function boundaryFaces(values,eq,g,data) {
+  const faces={},derivatives={},rates={};let rate=0,residual=0;
   const edge=(side,indices,h,d,area)=>{
-    faces[side]=[];derivatives[side]=[];
-    indices.forEach((p,k)=>{const dir=eq.boundaries[side].type==='dirichlet',value=dir?data[side][k]:values[p]+h*data[side][k]/2,q=dir?2*(value-values[p])/h:data[side][k];faces[side].push(value);derivatives[side].push(q);rate+=d*q*area;});
+    faces[side]=[];derivatives[side]=[];rates[side]=0;
+    indices.forEach((p,k)=>{const b=eq.boundaries[side],den=b.beta+b.alpha*h/2,q=(data[side][k]-b.alpha*values[p])/den,value=(b.beta*values[p]+h*data[side][k]/2)/den;faces[side].push(value);derivatives[side].push(q);rates[side]+=d*q*area;residual=Math.max(residual,Math.abs(b.alpha*value+b.beta*q-data[side][k]));});
+    rate+=rates[side];
   };
   edge('left',Array.from({length:g.ny},(_,j)=>j*g.n),g.hx,eq.diffusion.x,g.ny>1?g.hy:1);
   edge('right',Array.from({length:g.ny},(_,j)=>j*g.n+g.n-1),g.hx,eq.diffusion.x,g.ny>1?g.hy:1);
   if(g.ny>1){edge('bottom',Array.from({length:g.n},(_,i)=>i),g.hy,eq.diffusion.y,g.hx);edge('top',Array.from({length:g.n},(_,i)=>(g.ny-1)*g.n+i),g.hy,eq.diffusion.y,g.hx);}
-  return {faces,derivatives,rate};
+  return {faces,derivatives,rates,rate,residual};
 }
 
 function formulaBoundaryMismatch(ast,eq,prepared,time) {
@@ -135,8 +146,8 @@ function formulaBoundaryMismatch(ast,eq,prepared,time) {
   for(const side of sidesFor(c.dimension))for(let k=0;k<(c.dimension===2?5:1);k++){
     const horizontal=side==='left'||side==='right',axis=horizontal?'x':'y',length=horizontal?c.Lx:c.Ly,sign=side==='left'||side==='bottom'?-1:1;
     const point={...constants,t:time,x:horizontal?sign*c.Lx/2:-c.Lx/2+(k+.5)*c.Lx/5,y:horizontal?(c.dimension===2?-c.Ly/2+(k+.5)*c.Ly/5:0):sign*c.Ly/2};
-    const h=1e-5*length,v=evaluate(ast,point),b=eq.boundaries[side],target=evaluate(b.formula,point);
-    const measured=b.type==='dirichlet'?v:(3*v-4*evaluate(ast,{...point,[axis]:point[axis]-sign*h})+evaluate(ast,{...point,[axis]:point[axis]-2*sign*h}))/(2*h);
+    const h=1e-5*length,v=evaluate(ast,point),b=eq.boundaries[side],target=evaluate(b.formula,point)/b.scale;
+    const q=(3*v-4*evaluate(ast,{...point,[axis]:point[axis]-sign*h})+evaluate(ast,{...point,[axis]:point[axis]-2*sign*h}))/(2*h),measured=b.alpha*v+b.beta*q;
     if(!Number.isFinite(measured)||!Number.isFinite(target))throw Error('Boundary/reference formulas must remain finite.');maximum=Math.max(maximum,Math.abs(measured-target));
   }
   return maximum;
@@ -164,7 +175,7 @@ export async function simulateBounded(prepared,progress,yieldTask) {
     const edgeValues=[],diagnostics=state.map((v,j)=>{
       let sum=0,squares=0,min=Infinity,max=-Infinity;for(const a of v){sum+=a;squares+=a*a;min=Math.min(min,a);max=Math.max(max,a);}
       const face=boundaryFaces(v,equations[j],g,data[j]);edgeValues.push(face.faces);
-      const d={mean:sum/g.size,rms:Math.sqrt(squares/g.size),min,max,mass:sum*g.hx*(g.ny>1?g.hy:1),boundaryMassRate:face.rate};
+      const d={mean:sum/g.size,rms:Math.sqrt(squares/g.size),min,max,mass:sum*g.hx*(g.ny>1?g.hy:1),boundaryMassRate:face.rate,boundarySideRates:face.rates,boundaryConstraintResidual:face.residual};
       if(equations[j].exact){const ref=array(evaluate(equations[j].exact,{...context,t:time},g),g.size);check(ref);let error=0,norm=0;for(let i=0;i<g.size;i++){error+=(v[i]-ref[i])**2;norm+=ref[i]**2;}d.referenceRmsError=Math.sqrt(error/g.size);d.referenceRelativeL2=norm>1e-24?Math.sqrt(error/norm):null;}
       return d;
     });

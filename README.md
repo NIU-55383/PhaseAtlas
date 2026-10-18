@@ -1,10 +1,17 @@
 # PhaseAtlas
 
+## Current competition snapshot - 18 October 2026
+
+The homepage now introduces the research workflow; the original wave laboratory is at `dist/front.html`. Latest submission copy, article, figures and scripts are in `dist/submission-2026/`. Numerical case data are in `dist/data/submission-2026/`. The package is a pre-event baseline, not a claim of work performed during the October 21-22 event.
+
+Run `node research/build_submission_cases.mjs` to reproduce case arrays, `python research/submission_figures.py` for plots, and `python research/build_submission_documents.py` for PDFs (NumPy/Matplotlib and ReportLab/PyPDF respectively). The submission pack also includes the exact numerical source and tests. Read the submission kit for the unresolved 2026 form/legacy-guideline discrepancy.
+
+
 A browser-based PDE research workspace connecting custom equations, exact fronts, numerical evolution, visual diagnostics, and reproducible evidence.
 
 ## Custom PDE Studio
 
-Open `studio.html` through the local server, or select **Custom PDE studio** in the navigation. Write one to three coupled evolution equations in 1D or 2D, set parameters, initial data and boundary conditions, and inspect fixed-scale animations, space-time diagrams, means and RMS amplitudes. Nineteen editable presets cover diffusion, nonlinear waves, phase/reaction dynamics, cooled and insulated rods, a heated plate, fourth-order boundary benchmarks, and the original MAE03 travelling front.
+Open `studio.html` through the local server, or select **Custom PDE studio** in the navigation. Write one to three coupled evolution equations in 1D or 2D, set parameters, initial data and boundary conditions, and inspect fixed-scale animations, space-time diagrams, means and RMS amplitudes. Twenty-one editable presets cover diffusion, nonlinear waves, phase/reaction dynamics, cooled and insulated rods, a heated plate, fourth-order boundary benchmarks, and the original MAE03 travelling front.
 
 Periodic domains support derivatives through order four with Fourier ETDRK4. Bounded intervals and rectangles support Dirichlet and Neumann conditions independently on each field and edge, including time-dependent boundary data. This backend uses cell-centered finite volumes and SBDF2 for constant diagonal diffusion, reactions, and smooth transport with diffusion. It includes boundary mass-transfer diagnostics and explicit scope checks. A separate 1D fourth-order backend accepts two custom linear boundary conditions per endpoint, including value, slope, curvature, third normal derivative and linear combinations. It uses banded implicit solves for the complete constant diagonal linear operator and retains animation and refinement. All studio backends use a restricted mathematical parser and a cancellable Web Worker. This is not a solver for arbitrary PDEs or geometries; the original wave-front results remain model-specific.
 

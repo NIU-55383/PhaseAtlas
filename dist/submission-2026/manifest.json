@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-18",
+  "author": "Niu Te",
+  "affiliation": "Imperial College London",
+  "status": "Pre-event baseline; not posted or submitted",
+  "numericTests": {
+    "passed": 90,
+    "failed": 0,
+    "command": "node --test tests/science.test.mjs tests/studio.test.mjs tests/boundaries.test.mjs tests/fourth.test.mjs tests/evidence.test.mjs tests/research.test.mjs tests/robin.test.mjs"
+  },
+  "sources": {
+    "studio-solver.js": "f51d78083fb67f1a175727a157c2123efa6928cbca9ba29c1881453c95ae7f3e",
+    "studio-bounded.js": "7c80ca6244e4a4fc68fa7bc4ee619544185677069bdf7a87d4ad824b73001cea",
+    "studio-fourth.js": "9c52eb2ade35af8064faf777e52166dde609e366d9f0b2516ede46b5edafbd26",
+    "studio-expression.js": "ecc4f2221c22648288bf3137163abe04ddfa5e7baef2e84b7bf98c8265050e22",
+    "studio-presets.js": "3f5ad8bed2d16f6362ea444ef5af064105c8939c210fad4953b93b1a7fefb5d8",
+    "research-audit.mjs": "2375d5a87d9af27556a83d457627ffbdcb1036b84f1214615359fb09ead37da1",
+    "research-core.mjs": "70f1c7778007baf3cf6498c7cf46dae6975545c54f04de751016a98923bac1ca",
+    "evidence-core.mjs": "7dbd5867a72df1439d72ca8a426a245afd8b1f7aa5fd272b2eaf2b52d3ec5f29",
+    "science.js": "aefd55686bfbb8b2331f5f1b2d86c1cdcb8d537905d10bec0ee8b2de7b52f89d"
+  },
+  "artifacts": {
+    "submission-2026/demo-2min.txt": "9c156c1830b4e26167e4cf5f134416fbee87a17ced4a357f19da7a6f195d5780",
+    "submission-2026/demo-4min.txt": "3f178a1c82fd9f8dce40d601e18e437e4b2934bdcafcada24bd5834571ad6bef",
+    "submission-2026/Package_README.html": "93d3d8a7c4cb77971f6d14b52d458ec07c82c38bdf08d49b82a34b4352e3ff9e",
+    "submission-2026/PhaseAtlas_Article.html": "e89dd4d2e740c55488ea23b3cfaaf495c4e9403b6b4c7dc397a0f5629aea9a00",
+    "submission-2026/PhaseAtlas_Article.pdf": "6fd0be666e4b5759534d684018ba072eada1314a2a56453abddadfdf151219fd",
+    "submission-2026/PhaseAtlas_One_Page.html": "75a8a7f66a28bfd8c610a36fedd56470c36ef0659f0690fe1f3fc28ff479bf72",
+    "submission-2026/PhaseAtlas_One_Page.pdf": "d79ed7faa01427d8187d3a9d8bd8824c03f8d70681830ae5698ddaaf927e2b37",
+    "submission-2026/PhaseAtlas_Submission_Kit.html": "82a800a917920d218cdb41668d0b399b14f990e1b6abf66d6e7adb206260ee11",
+    "submission-2026/PhaseAtlas_Submission_Kit.pdf": "129ab5acc6d6b2af69f44c440504abf6c95493096ac2d5935fd88bc945799034",
+    "submission-2026/social-post.txt": "81aa24a575f4a512a7b07f22a9cfa08ec173ae497c82deb6a036285bc1b5108e",
+    "submission-2026/figures/cooling.png": "0938cfcd86939603a913976ce6e850604aba95809b707cc4ef54885431b71758",
+    "submission-2026/figures/cooling.svg": "404db7e30605e154a460c990584d28a069337e5022c0737ca22d870ac8eb2231",
+    "submission-2026/figures/parameter-map.png": "7c0694704af46e662697082ffc5ca20d6e9d350a517b505fdec50c303fcf32b2",
+    "submission-2026/figures/parameter-map.svg": "fa3dcfee8e6b4a679dc0f19d6d3fba0174d08c95fc03a2a344ced5dac4be5a2c",
+    "submission-2026/figures/verification.png": "8e69186aab353d88f1331e3f3d89309612d7f9938dcb06e28744cee98cbd08e1",
+    "submission-2026/figures/verification.svg": "0153276d869f5859e64b49d3ada654d70a8c06fbb280eec054bfbf4e23439e96",
+    "submission-2026/figures/wave.png": "5aecfe3ab56f81b21a696d7012c75683e4bd6269b50ed8944013376b8e366906",
+    "submission-2026/figures/wave.svg": "7358ebb2cb2f72ced47a86c7b806d771401e03bdfecd96d9bf3d7398ebc47f51"
+  },
+  "presentationQA": {
+    "checks": [
+      "Focused homepage and recorded scientific data load",
+      "Recorded animation plays, pauses and scrubs",
+      "Every local homepage document, data and tool link resolves",
+      "Homepage model opens without auto-run, then computes and audits",
+      "Legacy front links redirect; original solver runs; off-topic roadmap removed",
+      "Studio still links to the working original front laboratory",
+      "Evidence comparison remains functional after removing competitor cards",
+      "Public scope page contains supported methods instead of competitor roadmap",
+      "All editable submission documents and figures load",
+      "English mobile layout has no horizontal overflow"
+    ],
+    "errors": []
+  }
+}

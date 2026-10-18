@@ -1,0 +1,15 @@
+0:00-0:25
+Show homepage cooling animation.
+A persuasive PDE animation does not tell us whether a computation is resolved. PhaseAtlas connects an editable model to visual experiments, numerical checks and an exportable research record. I am Niu Te from Imperial College London.
+
+0:25-0:55
+Show Robin model and refinement chart.
+A hot rod exchanging heat with its surroundings gives a practical starting point. Robin boundary data represent wall exchange. A separate exact heat-equation mode lets us test the numerical implementation: on sixteen, thirty-two and sixty-four cells, errors decrease with observed order approximately two. A balance audit exposes the relationship between heat leaving the walls and thermal-content change.
+
+0:55-1:25
+Show parameter map and original wave animation.
+Every cell in a parameter map retains its trajectory and metric definition. A researcher can compare cooling responses and revisit a failed run. The original fourth-order front from my earlier research adds wave-motion and deformation diagnostics, with configurable extra boundary conditions in the general Studio. The numerical evidence is not presented as a stability theorem.
+
+1:25-1:55
+Show JSON export and article.
+Another researcher receives equations, boundaries, arrays and method information, plus selected independent Python checks. The current suite passes ninety tests. The implementation is independent and AI-assisted; simulation runs locally without a runtime language-model API. The dated package separates prior work from contributions made during the event. PhaseAtlas helps turn an interesting picture into an experiment that someone else can inspect.

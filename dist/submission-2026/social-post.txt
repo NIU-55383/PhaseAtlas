@@ -1,0 +1,12 @@
+A PDE animation is only the beginning. How do you check the numerical result behind it?
+
+PhaseAtlas connects editable PDEs, animated experiments, controlled refinement and reproducible exports in a browser workbench. Two examples link practical boundary cooling with my earlier research on a fourth-order travelling front.
+
+The current Robin eigenmode benchmark shows approximately second-order spatial convergence. Researchers can compare parameter-dependent responses, inspect boundary balance, and separate wave motion from deformation. Failed or unresolved observations remain visible.
+
+Developed with AI assistance; numerical computation runs locally without a runtime LLM API. This is scientific software and numerical evidence, not a new stability theorem or an experimentally calibrated engineering prediction.
+
+Niu Te | Imperial College London
+Source: https://github.com/NIU-55383/PhaseAtlas
+
+Publication fields to add after final checks: current demo URL, public video URL, one-page PDF URL, and the actual October 21-22 contribution. The 18 October version is a pre-event baseline.
