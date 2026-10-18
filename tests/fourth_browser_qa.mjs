@@ -1,0 +1,37 @@
+import {createRequire} from 'node:module';
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const {chromium}=createRequire(import.meta.url)('playwright');
+const base=process.env.PHASEATLAS_TEST_URL||'http://127.0.0.1:8766';
+await fs.mkdir('docs/screenshots',{recursive:true});
+const browser=await chromium.launch({channel:'msedge',headless:true}),errors=[],badResponses=[],checks=[];
+try{
+  const page=await browser.newPage({viewport:{width:1512,height:1100},reducedMotion:'reduce'});
+  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)badResponses.push([r.status(),r.url()]);});
+  const completed=()=>page.waitForFunction(()=>document.querySelector('#studio-status').textContent.startsWith('Completed'),{},{timeout:60000});
+  const run=async()=>{await page.locator('#run-studio').click();await completed();};
+  const download=async(id,name)=>{const waiting=page.waitForEvent('download',{timeout:30000});await page.locator('#'+id).click();const d=await waiting;await d.saveAs('docs/screenshots/'+name);return fs.readFile('docs/screenshots/'+name);};
+  const layout=async()=>{const a=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,english:document.documentElement.lang==='en'&&!/[\u3400-\u9fff]/.test(document.body.innerText)}));assert.ok(a.english);assert.ok(a.scroll<=a.width,JSON.stringify(a));};
+  await page.goto(base+'/studio.html');await completed();await page.locator('#preset').selectOption('mae03-front');await run();
+  assert.equal(await page.locator('#boundary-mode').inputValue(),'fourth-order');assert.equal(await page.locator('#fourth-u-left-1-order').inputValue(),'1');
+  const front=JSON.parse(await download('export-studio-json','fourth-mae03.json'));assert.equal(front.config.fields[0].boundaries.left.conditions.length,2);assert.equal(front.config.fields[0].boundaries.right.conditions.length,2);assert.ok(front.frames.at(-1).diagnostics[0].referenceRelativeL2<.001);assert.ok(front.frames[0].boundaryTraces[0].left[1]<0);checks.push('original MAE03 PDE with four time-dependent endpoint conditions');
+  await page.locator('#studio-play').click();await page.waitForFunction(()=>Number(document.querySelector('#studio-timeline').value)>0);await page.locator('#studio-play').click();await page.locator('#studio-timeline').fill('60');
+  await page.locator('#refine-studio').click();await page.waitForFunction(()=>document.querySelector('#studio-status').textContent.startsWith('Two refinement'),{},{timeout:60000});
+  const refined=JSON.parse(await download('export-studio-json','fourth-refined.json'));assert.equal(refined.refinement.refinedN,1024);assert.ok(refined.refinement.temporal[0].relativeL2<.00001);assert.ok(refined.refinement.spatial[0].relativeL2<.001);checks.push('animation and separate time/grid refinement to N=1024');
+  await page.locator('.resolution-card summary').click();await page.waitForFunction(()=>document.querySelector('#spectrum-note').textContent.includes('four specified boundary rows'));
+  assert.ok((await page.locator('#method-description').textContent()).includes('banded LU'));assert.ok((await page.locator('#method-description').textContent()).includes('backward error'));checks.push('boundary enforcement diagnostics and correct numerical method');
+  const csv=String(await download('export-studio-csv','fourth-mae03.csv'));assert.equal(csv.trim().split('\n').length,front.frames.length*front.config.N+1);
+  const svg=String(await download('export-studio-figure','fourth-mae03.svg'));assert.ok(svg.includes('fourth-order boundary conditions'));assert.ok(svg.includes('&quot;conditions&quot;'));assert.ok(!svg.includes('NaN'));checks.push('CSV, SVG and complete boundary provenance');
+  const video=await download('export-studio-video','fourth-mae03.webm');assert.ok(video.length>10000);checks.push('fourth-order animation WebM export');
+  await page.locator('#import-studio').setInputFiles('research/validation/fourth-custom-time.json');await completed();
+  assert.equal(await page.locator('#preset').inputValue(),'');
+  assert.equal(await page.locator('#fourth-u-left-0-order').inputValue(),'custom');assert.equal(await page.locator('#fourth-u-left-0-a1').inputValue(),'2');assert.equal(await page.locator('#fourth-u-left-0-value').inputValue(),'t-1.625');checks.push('import of time-dependent mixed linear boundary operators');
+  await page.locator('#export-studio-config').click();const shared=await browser.newPage({reducedMotion:'reduce'});await shared.goto(await page.locator('#share-link').inputValue());await shared.waitForFunction(()=>document.querySelector('#studio-status').textContent.includes('Shared configuration loaded'));assert.equal(await shared.locator('#fourth-u-left-0-a1').inputValue(),'2');assert.equal(await shared.locator('#stat-time').textContent(),'—');await shared.close();checks.push('four-condition share link round trip without auto-run');
+  await page.locator('#boundary-mode').selectOption('periodic');await page.locator('#boundary-mode').selectOption('fourth-order');assert.equal(await page.locator('#fourth-u-left-0-a1').inputValue(),'2');checks.push('boundary mode switches preserve custom coefficients');
+  await page.locator('#fourth-u-left-0-a1').fill('window.alert(1)');await page.locator('#run-studio').click();await page.waitForFunction(()=>document.querySelector('#studio-status').classList.contains('error'));assert.ok((await page.locator('#result-title').textContent()).includes('Biharmonic'));await page.locator('#fourth-u-left-0-a1').fill('2');await run();checks.push('invalid boundary expression rejected with previous result retained');
+  await page.waitForFunction(()=>!document.querySelector('#studio-toast').classList.contains('visible'));await page.evaluate(()=>scrollTo(0,0));await layout();await page.screenshot({path:'docs/screenshots/fourth-desktop.png',fullPage:true});await page.setViewportSize({width:390,height:844});await layout();await page.screenshot({path:'docs/screenshots/fourth-mobile.png',fullPage:true});await page.setViewportSize({width:1512,height:1100});checks.push('English desktop/mobile custom-boundary layout');
+  await page.locator('#fourth-u-left-pair').selectOption('02');assert.equal(await page.locator('#fourth-u-left-1-order').inputValue(),'2');assert.equal(await page.locator('#fourth-u-left-0-value').inputValue(),'0');await page.locator('#fourth-u-right-pair').selectOption('13');assert.equal(await page.locator('#fourth-u-right-0-order').inputValue(),'1');checks.push('quick boundary-pair templates reset operators and targets');
+  await page.locator('#preset').selectOption('biharmonic-clamped');await page.locator('#fourth-u-left-1-order').selectOption('0');await page.locator('#run-studio').click();await page.waitForFunction(()=>document.querySelector('#studio-status').classList.contains('error'));assert.ok(/dependent|singular/.test(await page.locator('#studio-status').textContent()));checks.push('dependent boundary rows rejected');
+  await page.locator('#preset').selectOption('heated-plate');await run();assert.equal(await page.locator('#dimension').inputValue(),'2');assert.equal(await page.locator('#boundary-mode').inputValue(),'nonperiodic');checks.push('existing 2D second-order mode remains available');
+  assert.deepEqual(errors,[]);assert.deepEqual(badResponses,[]);const report={checks,errors,badResponses};await fs.writeFile('docs/screenshots/fourth-browser-qa.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+}finally{await browser.close();}

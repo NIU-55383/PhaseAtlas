@@ -1,5 +1,6 @@
 import {FIELD_NAMES, parseExpression, parseParameters, evaluate, derivativeOrder, splitLinear} from './studio-expression.js';
 import {makeBoundedGrid, prepareBounded, simulateBounded, sidesFor} from './studio-bounded.js';
+import {prepareFourth,simulateFourth} from './studio-fourth.js';
 
 export const SOLVER_VERSION = 'phaseatlas-spectral-1.0.0';
 export const METHOD = 'Fourier pseudospectral discretization; diagonal ETDRK4; half-band projection (|mode| < N/4 per axis); Float64 arithmetic; periodic boundaries.';
@@ -116,9 +117,10 @@ export function validateConfig(raw) {
   if (!raw || typeof raw !== 'object') throw Error('Missing experiment configuration.');
   const c = {title: String(raw.title || 'Custom experiment').slice(0, 100), dimension: Number(raw.dimension), N: Number(raw.N), Lx: Number(raw.Lx), Ly: Number(raw.Ly ?? raw.Lx), T: Number(raw.T), dt: Number(raw.dt), frames: Number(raw.frames ?? 61), parameters: raw.parameters ?? '', boundary: raw.boundary ?? 'periodic'};
   if (![1, 2].includes(c.dimension)) throw Error('Choose a one- or two-dimensional domain.');
-  if (!['periodic','nonperiodic','dirichlet','neumann'].includes(c.boundary)) throw Error('Choose periodic or Dirichlet/Neumann boundaries.');
+  if (!['periodic','nonperiodic','dirichlet','neumann','fourth-order'].includes(c.boundary)) throw Error('Choose periodic, Dirichlet/Neumann, or 1D fourth-order boundaries.');
   const defaultBoundary = c.boundary === 'neumann' ? 'neumann' : 'dirichlet';
-  if(c.boundary !== 'periodic')c.boundary='nonperiodic';
+  if(c.boundary !== 'periodic'&&c.boundary!=='fourth-order')c.boundary='nonperiodic';
+  if(c.boundary==='fourth-order'&&c.dimension!==1)throw Error('Custom fourth-order boundary conditions currently require a 1D interval.');
   if (!Number.isInteger(c.N) || c.N < 16 || c.N > (c.dimension === 2 ? 128 : 1024) || (c.N & (c.N - 1))) throw Error('Use a power-of-two grid: 16–1024 in 1D, or 16–128 per axis in 2D.');
   if (![c.Lx, c.Ly].every(n => Number.isFinite(n) && n > 0 && n <= 10000)) throw Error('Domain lengths must be positive and at most 10000.');
   if (![c.T, c.dt].every(n => Number.isFinite(n) && n > 0) || c.T > 100000 || c.dt > c.T) throw Error('Require 0 < time step ≤ end time ≤ 100000.');
@@ -131,6 +133,14 @@ export function validateConfig(raw) {
       field.boundaries={};
       for(const side of sidesFor(c.dimension)){
         const bc=f.boundaries?.[side] ?? (['dirichlet','neumann'].includes(raw.boundary)?{type:defaultBoundary,value:'0'}:null);
+        if(c.boundary==='fourth-order'){
+          if(!bc||!Array.isArray(bc.conditions)||bc.conditions.length!==2)throw Error(`Specify two independent conditions on the ${side} endpoint of field ${field.name}.`);
+          field.boundaries[side]={conditions:bc.conditions.map(row=>{
+            if(!row||!Array.isArray(row.coefficients)||row.coefficients.length!==4||!row.coefficients.every(v=>typeof v==='string')||typeof row.value!=='string')throw Error('Each fourth-order boundary row needs four constant coefficient expressions and a target expression.');
+            return {coefficients:row.coefficients.map(s=>s.trim()),value:row.value.trim()};
+          })};
+          continue;
+        }
         if(!bc||!['dirichlet','neumann'].includes(bc.type)||typeof bc.value!=='string')throw Error(`Specify the ${side} boundary of field ${field.name}.`);
         field.boundaries[side]={type:bc.type,value:bc.value.trim()};
       }
@@ -145,6 +155,7 @@ export function validateConfig(raw) {
 
 export function prepare(raw) {
   const config = validateConfig(raw);
+  if(config.boundary==='fourth-order')return prepareFourth(config);
   if(config.boundary!=='periodic')return prepareBounded(config);
   const grid = makeGrid(config), parameters = parseParameters(config.parameters);
   const constants = {...parameters, Lx: config.Lx, Ly: config.Ly};
@@ -181,6 +192,7 @@ function combine(parts, size) {
 
 export async function simulate(raw, progress = () => {}, yieldTask = () => Promise.resolve()) {
   const prepared=prepare(raw);
+  if(prepared.config.boundary==='fourth-order')return simulateFourth(prepared,progress,yieldTask);
   if(prepared.config.boundary!=='periodic')return simulateBounded(prepared,progress,yieldTask);
   const {config, grid, constants, equations, warnings, operators} = prepared;
   const start = performance.now(), context = {...constants, x: grid.x, y: grid.y, t: 0};

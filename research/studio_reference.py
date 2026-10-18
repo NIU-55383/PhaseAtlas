@@ -1,13 +1,15 @@
 """Independent small-grid check of a PhaseAtlas Studio JSON export.
 
 Uses NumPy FFTs (periodic) or independently implemented finite-volume stencils
-(Dirichlet/Neumann) and SciPy solve_ivp (DOP853 or BDF), not the browser's
+(Dirichlet/Neumann), or quartic boundary reconstruction with finite differences
+(fourth-order 1D), and SciPy solve_ivp (DOP853 or BDF), not the browser's
 ETDRK4/SBDF2 implementation. The spatial discretization is held fixed;
 agreement therefore checks time integration, not continuum convergence.
 
     python studio_reference.py experiment.json --output comparison.json
     python studio_reference.py experiment.json --method BDF
 
+The default selects BDF for fourth-order boundary problems and DOP853 otherwise.
 Dependencies: numpy, scipy. Limit: N <= 128 in 1D; N <= 32 per axis in 2D.
 Expressions are interpreted with a restricted AST; no eval or exec is used.
 """
@@ -79,7 +81,7 @@ def evaluate(node, context, derivative=None):
     return FUNCTIONS[name](*args)
 
 
-def run(document, method='DOP853'):
+def run(document, method='auto'):
     config = document.get('config', document)
     dimension, n = int(config['dimension']), int(config['N'])
     fields = config['fields']
@@ -88,8 +90,12 @@ def run(document, method='DOP853'):
     if n < 16 or n & (n-1) or n > (128 if dimension == 1 else 32):
         raise ValueError('Independent reference limit: power-of-two N = 16–128 in 1D, 16–32 in 2D. Export a smaller-grid run first.')
     boundary = config.get('boundary', 'periodic')
-    if boundary not in {'periodic', 'nonperiodic', 'dirichlet', 'neumann'}:
-        raise ValueError('Choose periodic or Dirichlet/Neumann boundaries.')
+    if boundary not in {'periodic', 'nonperiodic', 'dirichlet', 'neumann', 'fourth-order'}:
+        raise ValueError('Choose periodic, Dirichlet/Neumann, or 1D fourth-order boundaries.')
+    if boundary == 'fourth-order' and dimension != 1:
+        raise ValueError('Fourth-order boundary mode requires 1D.')
+    if method == 'auto':
+        method = 'BDF' if boundary == 'fourth-order' else 'DOP853'
     bounded = boundary != 'periodic'
     lx, ly, end, dt = (float(config[k]) for k in ('Lx', 'Ly', 'T', 'dt'))
     if not all(math.isfinite(v) and v > 0 for v in (lx, ly, end, dt)) or dt > end or end/dt > 40000:
@@ -105,6 +111,8 @@ def run(document, method='DOP853'):
         if not math.isfinite(value): raise ValueError('Non-finite parameter.')
         constants[match[1]] = value
     constants.update(Lx=lx, Ly=ly)
+    if boundary == 'fourth-order':
+        return run_fourth(document, method, constants)
     x = -lx/2 + (np.arange(n) + (0.5 if bounded else 0))*lx/n
     kx = 2*np.pi*np.fft.fftfreq(n, d=lx/n)
     modes = np.fft.fftfreq(n)*n
@@ -238,11 +246,105 @@ def run(document, method='DOP853'):
     return report
 
 
+def run_fourth(document, method, constants):
+    """Independent quartic closures and NumPy stencils; SciPy integrates the full RHS."""
+    config = document.get('config', document)
+    n, length, end, dt = int(config['N']), float(config['Lx']), float(config['T']), float(config['dt'])
+    fields, h = config['fields'], length/n
+    names = ('u', 'v', 'w')[:len(fields)]
+    x = -length/2 + (np.arange(n)+0.5)*h
+    xe = -length/2 + (np.arange(n+4)-1.5)*h
+    context = dict(constants, x=x)
+    matrices, targets = [], []
+    for field in fields:
+        closures, formulas = {}, {}
+        for side in ('left', 'right'):
+            conditions = field.get('boundaries', {}).get(side, {}).get('conditions', [])
+            if len(conditions) != 2:
+                raise ValueError('Provide two boundary conditions per endpoint.')
+            matrix = np.zeros((5, 5))
+            for j in range(3):
+                matrix[j] = (j+0.5)**np.arange(5)
+            for j, row in enumerate(conditions):
+                if len(row.get('coefficients', [])) != 4:
+                    raise ValueError('Each boundary row needs four coefficients.')
+                for k, value in enumerate(row['coefficients']):
+                    matrix[3+j, k] = evaluate(parse(value), constants)*math.factorial(k)*(-1/h)**k
+            if not np.all(np.isfinite(matrix)):
+                raise ValueError('Boundary coefficients must be finite.')
+            # Solve for polynomial coefficients from three centers and two rows.
+            inverse = np.linalg.solve(matrix, np.eye(5))
+            closures[side] = np.vstack([(-0.5-j)**np.arange(5) for j in range(2)]) @ inverse
+            formulas[side] = [parse(row['value']) for row in conditions]
+        matrices.append(closures)
+        targets.append(formulas)
+
+    def as_field(value):
+        a = np.broadcast_to(np.asarray(value, dtype=float), (n,)).copy()
+        if not np.all(np.isfinite(a)):
+            raise ValueError('Non-finite field.')
+        return a
+
+    equations = [parse(f['rhs']) for f in fields]
+    initial = np.stack([as_field(evaluate(parse(f['initial']), context)) for f in fields])
+    coefficients = {1: np.array([-0.5, 0, 0.5]), 2: np.array([1, -2, 1]),
+                    3: np.array([-0.5, 1, 0, -1, 0.5]), 4: np.array([1, -4, 6, -4, 1])}
+
+    def rhs(t, vector):
+        current = vector.reshape(len(fields), n)
+        extended = {}
+        for j, name in enumerate(names):
+            v = np.empty(n+4)
+            v[2:-2] = current[j]
+            for side in ('left', 'right'):
+                boundary_context = dict(constants, x=(-1 if side == 'left' else 1)*length/2, t=t)
+                data = [evaluate(formula, boundary_context) for formula in targets[j][side]]
+                inside = current[j, :3] if side == 'left' else current[j, -1:-4:-1]
+                ghosts = matrices[j][side] @ np.r_[inside, data]
+                if side == 'left': v[:2] = ghosts[::-1]
+                else: v[-2:] = ghosts
+            extended[name] = v
+        ext_context = dict(constants, x=xe, t=t, **extended)
+
+        def derivative(value, name, order, source):
+            if name == 'Dy': raise ValueError('Dy is unavailable in 1D.')
+            degree = 2 if name == 'lap' else 4 if name == 'biharm' else int(order)
+            if degree not in (1, 2, 3, 4): raise ValueError('Derivative order must be one to four.')
+            if degree > 1 and (not isinstance(source, ast.Name) or source.id not in names):
+                raise ValueError('Higher derivatives must act directly on fields.')
+            a = np.broadcast_to(np.asarray(evaluate(source, ext_context), dtype=float), (n+4,))
+            weights = coefficients[degree]
+            offset = 1 if degree <= 2 else 0
+            return sum(weight*a[offset+i:offset+i+n] for i, weight in enumerate(weights))/h**degree
+
+        variables = dict(context, t=t, **dict(zip(names, current)))
+        with np.errstate(over='raise', invalid='raise', divide='raise'):
+            return np.stack([as_field(evaluate(eq, variables, derivative)) for eq in equations]).ravel()
+
+    solution = solve_ivp(rhs, (0, end), initial.ravel(), method=method,
+                         rtol=1e-9, atol=1e-11, max_step=dt, t_eval=[end])
+    if not solution.success: raise RuntimeError(solution.message)
+    report = {'method': f'SciPy solve_ivp {method}; NumPy quartic boundary closures and centered differences; rtol=1e-9, atol=1e-11',
+              'scope': 'Same cell-centered fourth-order spatial discretization and custom boundary rows. Independent implementation and time integrator; not a continuum error bound.',
+              'config': config, 'rhsEvaluations': solution.nfev, 'fields': []}
+    exported = document.get('frames', [])
+    if exported and not math.isclose(float(exported[-1]['t']), end, rel_tol=1e-10, abs_tol=1e-12):
+        raise ValueError('Exported final time does not match the configuration.')
+    for j, v in enumerate(solution.y[:, -1].reshape(len(fields), n)):
+        row = {'field': names[j], 'mean': float(np.mean(v)), 'rms': float(np.sqrt(np.mean(v*v)))}
+        if exported:
+            previous = np.asarray(exported[-1]['values'][j]).reshape(n)
+            row['browserRelativeL2Difference'] = float(np.linalg.norm(v-previous)/max(np.linalg.norm(v), 1e-30))
+        row['finalValues'] = v.tolist()
+        report['fields'].append(row)
+    return report
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('experiment', type=Path)
     parser.add_argument('--output', type=Path, default=Path('phaseatlas-reference-check.json'))
-    parser.add_argument('--method', choices=['DOP853', 'BDF'], default='DOP853')
+    parser.add_argument('--method', choices=['auto', 'DOP853', 'BDF'], default='auto')
     args = parser.parse_args()
     result = run(json.loads(args.experiment.read_text(encoding='utf-8')), args.method)
     args.output.write_text(json.dumps(result, indent=2), encoding='utf-8')

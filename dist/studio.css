@@ -6,3 +6,5 @@
 @media(prefers-reduced-motion:reduce){.studio-main *{scroll-behavior:auto}}
 
 .boundary-editor{padding:10px;background:#ededf6;border-left:2px solid #0000cd}.boundary-editor summary{margin-bottom:10px}.boundary-row{display:grid;grid-template-columns:1.1fr 1fr;gap:8px}.boundary-row label{min-width:0;font-size:10px}.boundary-row input,.boundary-row select{min-width:0;width:100%;font-size:11px}.boundary-row.hidden,.boundary-editor.hidden{display:none}
+
+.fourth-boundary-editor{padding:10px;background:#ededf6;border-left:2px solid #0000cd;margin-bottom:15px}.fourth-boundary-editor.hidden{display:none}.fourth-boundary-editor summary{margin-bottom:10px;font-size:11px}.fourth-endpoint{border-top:1px solid #d7dce7;padding-top:10px;margin-top:12px}.fourth-condition{border-top:1px dotted #c7cbe1;padding-top:8px}.fourth-coefficients{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.fourth-coefficients label,.fourth-coefficients input{min-width:0;width:100%}.fourth-weights .helper{margin-top:4px}.fourth-endpoint select{width:100%}

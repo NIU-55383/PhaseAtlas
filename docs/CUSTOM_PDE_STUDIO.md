@@ -19,7 +19,7 @@ The model is a system of one to three real-valued fields:
 
 `∂t u_j = L_j u_j + R_j(u, v, w, x, y, t)`.
 
-Choose a periodic interval/rectangle or a bounded interval/rectangle. Periodic coordinates are `[-Lx/2, Lx/2)` and `[-Ly/2, Ly/2)`, with derivatives through total order four. Bounded domains include both end faces and support constant non-negative diagonal diffusion, reactions, forcing, and smooth first-derivative transport with positive diffusion in the differentiated field and direction. All quantities are in user-chosen consistent units; examples are dimensionless.
+Choose a periodic interval/rectangle or a bounded interval/rectangle. Periodic coordinates are `[-Lx/2, Lx/2)` and `[-Ly/2, Ly/2)`, with derivatives through total order four. The second-order bounded backend supports constant non-negative diagonal diffusion, reactions, forcing, and smooth first-derivative transport with positive diffusion. The fourth-order bounded backend supports 1D systems with a negative constant diagonal fourth-derivative coefficient and two independent linear boundary conditions per endpoint (see below). All quantities are in user-chosen consistent units; examples are dimensionless.
 
 | Input | Meaning |
 | --- | --- |
@@ -27,10 +27,10 @@ Choose a periodic interval/rectangle or a bounded interval/rectangle. Periodic c
 | `x`, `y`, `t` | Position and time; y is available only in 2D |
 | `Lx`, `Ly`, `pi`, `e` | Domain lengths and mathematical constants |
 | `Dx(u,1)` or `D(u,1)` | First x derivative |
-| `Dx(u,4)` | Fourth x derivative, periodic mode only |
+| `Dx(u,4)` | Fourth x derivative, periodic or 1D fourth-order boundary mode |
 | `Dy(v,2)` | Second y derivative |
 | `lap(u)` | Laplacian: u_xx in 1D, u_xx + u_yy in 2D |
-| `biharm(u)` | Squared Laplacian, including the 2u_xxyy term in 2D; periodic only |
+| `biharm(u)` | Squared Laplacian; available in periodic mode and equivalent to Dx(u,4) in 1D fourth-order boundary mode |
 | `lap(u^3)` | A derivative acting on a nonlinear expression; periodic only |
 | `sin cos tanh exp log sqrt abs min max` | Allowed mathematical functions |
 | `+ - * / ^` | Arithmetic; multiplication must be explicit |
@@ -81,7 +81,7 @@ Write the semidiscrete equation as `u'=L u+b(t)+R(u,t)`, with constant diffusion
 
 This is SBDF2. Time-varying boundary forcing is evaluated at the new time. Each implicit system is solved by matrix-free, diagonally preconditioned conjugate gradients, stopping at residual norm `≤1e-11*max(1,||rhs||₂)`. Failure to reach tolerance stops the run. The diffusion solve does not remove stability restrictions from explicit reaction or transport. Second-order convergence is verified on smooth benchmarks, not guaranteed for incompatible, nonsmooth, or stiff arbitrary inputs.
 
-General third-/fourth-order PDEs need additional boundary conditions and are rejected in this mode. Cross diffusion, variable/nonlinear diffusivity, mixed second derivatives and pure transport require other backends. They are not silently given periodic or zero extra conditions. The periodic fourth-order presets remain available.
+Third-/fourth-order PDEs are rejected by the second-order Dirichlet/Neumann backend. Use the dedicated 1D fourth-order mode below when applicable. Cross diffusion, variable/nonlinear diffusivity, mixed second derivatives and pure transport require other backends. They are not silently given periodic or zero extra conditions. The periodic fourth-order presets remain available.
 
 ### Bounded visualization and checks
 
@@ -91,6 +91,57 @@ General third-/fourth-order PDEs need additional boundary conditions and are rej
 - Resolution checks first halve dt at the same N, then double N at that smaller dt. Fine-grid cell-center values are linearly/bilinearly interpolated to coarse centers. The reported spatial difference includes interpolation error; it is a comparison, not a rigorous error bound. Periodic comparisons continue to use coincident nodes.
 - JSON retains per-edge formulas, cell-centered grid layout, boundary face values, mass, diffusive mass input, reference checks and implicit-solve diagnostics. CSV exports the actual cell-center coordinates and all field values. SVG and WebM include the bounded-domain label. Share links and imports preserve boundary settings.
 
+## Custom fourth-order conditions in 1D
+
+Choose **1D fourth order · two conditions per end**, or start from **MAE03 · 3/2-power travelling front**. This mode has its own numerical backend. One to three fields can be evolved; each active field must have a strictly negative constant coefficient of its own fourth derivative. Constant diagonal zeroth-, first-, second- and third-derivative coefficients may have either sign. Coupled/nonlinear reactions, forcing and first spatial derivatives remain explicit. Nonlinear or variable-coefficient higher derivatives, cross-diffusion, 2D fourth-order boundary problems, and standalone third-order problems are outside this backend's scope.
+
+At each endpoint, prescribe **two independent rows**, each of the form
+
+`a0*u + a1*Dn(u) + a2*Dn²(u) + a3*Dn³(u) = g(x,t)`.
+
+The four coefficients are constants or expressions in named parameters and domain lengths. They cannot depend on position, time or the evolving fields. The target g can depend on x, t and parameters. Each field has its own four rows. Coefficient units must make each row dimensionally consistent with its target.
+
+Here Dn is the outward normal derivative: **−Dx at the left endpoint, +Dx at the right**. Consequently Dn² = Dxx at both endpoints, while Dn³ = −Dxxx at the left and +Dxxx at the right. Choose a simple derivative in the operator selector, or **Linear combination** to edit a0 through a3.
+
+| Zero-data shortcut | Conditions at that endpoint |
+| --- | --- |
+| Zero value + slope | u = 0 and Dn u = 0 (clamped) |
+| Zero value + curvature | u = 0 and Dn² u = 0 (supported) |
+| Zero first + third derivatives | Dn u = 0 and Dn³ u = 0 |
+| Zero second + third derivatives | Dn² u = 0 and Dn³ u = 0 (free for the pure beam operator) |
+
+Shortcuts reset the two targets to zero. Afterwards each target can be changed. The left and right endpoints can use different pairs. For example, left `u+2 Dn u=t−1.625` and `Dn²u+Dn³u=−9`, with right `u=0.125+t` and `Dn³u=6`, match the profile `u=x³+t` on a unit interval. The corresponding benchmark RHS is `−kappa*Dx(u,4)+0.3*Dx(u,3)−0.2*Dx(u,2)−0.8+1.2*x`.
+
+Dependent or locally singular rows are rejected. This algebraic check does not prove that every custom boundary operator defines a well-posed continuous problem; changing the boundary pair can change the spectrum and growth mechanisms.
+
+### Fourth-order discretization and evidence
+
+Unknowns remain at N cell centers. At each endpoint a quartic polynomial is reconstructed from the nearest three cell values and the two specified rows. Evaluating it outside the interval supplies two ghost values; evaluating its first three normal derivatives supplies boundary traces. Interior derivatives use centered second-order formulas. There is no wrapping or spectral projection. The boundary closure has different local truncation errors from the interior; global convergence is measured on complete boundary-value benchmarks rather than inferred from the interior stencil alone.
+
+All constant same-field linear terms are implicit in SBDF2, including third-order dispersion and second-order antidiffusion. The first step uses backward Euler for the linear operator and explicit Euler for the remainder. Boundary forcing is evaluated at the new time. The constant banded systems are factored once using partial pivoting; elimination and pivot operations are replayed at each solve. Every step checks the scaled backward error of the linear system. An ill-conditioned boundary reconstruction, small pivot, failed solve or non-finite field stops the run.
+
+First derivatives of flux expressions, for example `Dx(a*u^2+2*b*u^3/3,1)`, are evaluated after reconstructing all field values in the ghost cells. Higher derivatives must act directly on a field. Nonlinear terms are explicit and centered transport is not a shock-capturing method. A negative leading fourth coefficient alone does not provide an unconditional stability guarantee for arbitrary reactions, time steps or boundary conditions.
+
+The animation uses actual reconstructed endpoint values. JSON includes all four rows, boundary traces, discrete constraint residuals, linear solve diagnostics and any refinement results. CSV retains the cell-center coordinates; SVG/WebM identify the fourth-order boundary mode. Sharing and importing preserve all coefficients and target formulas.
+
+The diagnostic chart shows the maximum absolute residual of the four **discrete boundary rows**, not diffusive mass input. Because the polynomial is constructed to satisfy these rows, a small residual tests numerical enforcement, not continuum accuracy. Use the independent reference, supplied-solution error and time/grid refinement for accuracy. Initial and reference boundary checks use one-sided sampled derivatives; these are numerical compatibility checks, not symbolic proofs. An arbitrary fourth-order boundary pair need not conserve mass.
+
+### The original MAE03 equation
+
+The travelling-front preset implements the original equation in laboratory coordinates:
+
+`u_t = gamma*u_xxxx − beta*u_xxx + alpha*u_xx − Dx(a*u² + 2*b*u³/3)`.
+
+Parameters are `gamma=−1`, `beta=−15/2`, `alpha=−71/4`, `a=0`, `b=315/16`, and `c=105/8`. The supplied front is
+
+`U(x,t) = (1+exp(−(x−c*t)))^(−3/2)`.
+
+The implementation uses the equivalent tanh formula for numerical evaluation. The ansatz exponent 3/2 is unrelated to the numerical grid size N. Both endpoint values and outward slopes follow this moving exact front; the slopes are not artificially set to zero. This turns the known whole-line profile into a consistent finite-interval benchmark.
+
+**MAE03 · perturbed moving-frame front** adds `c*Dx(u,1)` and uses coordinates moving with speed c. Its boundary values and slopes follow the stationary reference front. A small, tapered interior perturbation is added to the initial data. The supplied reference is the unperturbed front, not the exact perturbed solution. This backend evolves the full PDE and is not well-balanced around that front: set epsilon to zero and measure numerical drift before interpreting perturbation growth. Compare time step, spatial grid and domain size; prescribed finite boundaries are not absorbing whole-line conditions. These experiments do not establish nonlinear or convective stability.
+
+The other new presets are supported biharmonic smoothing, a clamped manufactured solution on the unit interval, and biharmonic smoothing with zero first and third normal derivatives. Their boundary conditions serve different models; the terminology does not transfer automatically to every physical fourth-order PDE.
+
 ## Independent Python check
 
 Download **Python reference**, or use `research/studio_reference.py`. Install NumPy and SciPy, then run:
@@ -99,7 +150,7 @@ Download **Python reference**, or use `research/studio_reference.py`. Install Nu
 python studio_reference.py phaseatlas-custom-experiment.json --output comparison.json
 ```
 
-Use `--method BDF` for an implicit small-grid reference. The default is SciPy DOP853 with relative tolerance 1e-9 and absolute tolerance 1e-11. The reference uses NumPy FFT for periodic domains, or an independent NumPy implementation of finite-volume stencils and boundary closures for bounded domains, together with a different time integrator. It compares the final fields with the browser export.
+Use `--method BDF` for an implicit small-grid reference. The default selects SciPy BDF for fourth-order bounded runs and DOP853 otherwise, with relative tolerance 1e-9 and absolute tolerance 1e-11. The reference uses NumPy FFT for periodic domains, or an independent NumPy implementation of finite-volume stencils for second-order bounded domains or quartic boundary reconstruction and centered differences for fourth-order bounded domains, together with a different time integrator. It compares the final fields with the browser export.
 
 This independent checker is limited to N ≤ 128 in 1D or N ≤ 32 per axis in 2D. Export a smaller-grid experiment before running the check. The spatial discretization (including periodic projection or bounded boundary closures) is intentionally matched: agreement checks independent implementations and time integration, not the continuum error.
 
@@ -109,12 +160,14 @@ This independent checker is limited to N ≤ 128 in 1D or N ≤ 32 per axis in 2
 - Three independent small-grid comparisons using SciPy DOP853: Burgers N=64, T=0.5; Gray–Scott N=16², T=2; Cahn–Hilliard N=16², T=0.1. Relative differences from the browser were approximately 1.20e-10, 4.42e-13 (largest field), and 2.01e-15 respectively. These are limited regression examples, not accuracy certificates for all settings.
 - Fourteen boundary tests cover Dirichlet/Neumann/mixed benchmarks, nonzero and time-dependent data, 2D tangential boundary formulas, anisotropic diffusion, separate conditions on coupled fields, mass input, spatial/temporal refinement, first derivatives, grid alignment and unsupported models.
 - Five independent bounded-grid SciPy comparisons are recorded in `dist/data/boundary-validation.json`; the largest relative final-field difference is approximately 4.01e-7 for the recorded steps and grids. Reproduce them with `node tests/boundary_reference_fixtures.mjs` and `python research/check_boundary_reference.py`.
+- Eleven fourth-order tests cover pivoted solves, quartic reconstruction, clamped/supported/free/derivative boundary pairs, nonzero third derivatives, time-dependent linear combinations, nonlinear fluxes, refinement of the original MAE03 front, and rejection of unsupported or dependent conditions.
+- Six fourth-order NumPy/SciPy BDF comparisons and three refinement studies are recorded in `dist/data/fourth-validation.json`. The largest recorded independent relative difference is approximately 1.05e-6. At T=0.01 and dt=0.000025, the MAE03 front relative errors at N=128,256,512 are approximately 9.79e-5, 2.46e-5 and 6.16e-6. These are measured cases, not guarantees for other configurations. Reproduce with `node tests/fourth_reference_fixtures.mjs` and `python research/check_fourth_reference.py`.
 - Browser checks cover desktop/mobile English UI, actual worker computation, refinement, JSON/CSV/SVG/WebM exports, sharing without automatic execution, invalid equations, import recomputation, cancellation, and navigation from the original laboratory.
 
-Run `npm test` for the original front tests and both studio backends. The browser script is `tests/studio_browser_qa.mjs`; it uses local Playwright/Edge and defaults to `http://127.0.0.1:8766`. The companion `tests/boundary_browser_qa.mjs` checks boundary controls, time-dependent endpoints, mixed 2D fields, mass diagnostics, animation, export, refinement, import and sharing. Set `PHASEATLAS_TEST_URL` to test a different local port.
+Run `npm test` for the original front tests and all three studio backends. The browser script is `tests/studio_browser_qa.mjs`; it uses local Playwright/Edge and defaults to `http://127.0.0.1:8766`. `tests/fourth_browser_qa.mjs` covers the original PDE, four-condition editing, pivoted-solve diagnostics, refinement, export, sharing, import and mobile layout. The companion `tests/boundary_browser_qa.mjs` checks boundary controls, time-dependent endpoints, mixed 2D fields, mass diagnostics, animation, export, refinement, import and sharing. Set `PHASEATLAS_TEST_URL` to test a different local port.
 
 ## Practical research use
 
 The studio is suited to model exploration, teaching, reproducible figure generation, checking signs and scales, and sharing a small computational experiment with a collaborator. For physical prediction, users must supply a justified model, units, calibrated parameters, suitable boundary conditions and validation data. For a theoretical paper, experiments can motivate a conjecture and identify regimes to analyze; they do not establish a new theorem.
 
-Future solver backends can be added behind the same configuration/export interface. Higher-order bounded problems, variable/cross diffusion, finite elements, constrained systems, parameter continuation, and validated numerics should each have their own admissibility checks and benchmark suite instead of being presented as one universal solver.
+Future solver backends can be added behind the same configuration/export interface. Two-dimensional higher-order boundary problems, variable/cross diffusion, finite elements, constrained systems, parameter continuation, and validated numerics should each have their own admissibility checks and benchmark suite instead of being presented as one universal solver.

@@ -1,6 +1,7 @@
 import {PRESETS, presetConfig} from './studio-presets.js';
 import {prepare, makeGrid, validateConfig} from './studio-solver.js';
 import {parseParameters, parseExpression, evaluate} from './studio-expression.js';
+import {boundaryWeights} from './studio-fourth.js';
 
 const $ = id => document.getElementById(id);
 const colors = ['#0000cd', '#c96428', '#8275bc'];
@@ -45,34 +46,53 @@ function editorFields(count, values = []) {
       $(`bc-${name}-${side}-type`).value=values[i]?.boundaries?.[side]?.type??($('boundary-mode').value==='neumann'?'neumann':'dirichlet');
       $(`bc-${name}-${side}-value`).value=values[i]?.boundaries?.[side]?.value??'0';
     }
+    const fourth=document.createElement('details');fourth.className='fourth-boundary-editor';fourth.open=true;fourth.innerHTML=`<summary>Four boundary conditions for ${name}</summary><p class="helper">Two independent rows at each endpoint. ∂n = −∂x at left and +∂x at right; odd derivative signs reverse at the left endpoint.</p>`;
+    for(const side of ['left','right']){
+      const endpoint=document.createElement('div');endpoint.className='fourth-endpoint';endpoint.innerHTML=`<label>${side==='left'?'Left':'Right'} endpoint<select class="fourth-pair" data-field="${name}" data-side="${side}" id="fourth-${name}-${side}-pair"><option value="custom">Custom conditions</option><option value="01">Zero value + slope</option><option value="02">Zero value + curvature</option><option value="13">Zero first + third derivatives</option><option value="23">Zero second + third derivatives</option></select></label>`;
+      for(let k=0;k<2;k++){
+        const prefix=`fourth-${name}-${side}-${k}`,condition=document.createElement('div');condition.className='fourth-condition';condition.dataset.prefix=prefix;
+        condition.innerHTML=`<div class="boundary-row"><label>Condition ${k+1}<select class="fourth-order-select" id="${prefix}-order" aria-label="${name} ${side} condition ${k+1} operator"><option value="0">u · value</option><option value="1">∂n u · slope</option><option value="2">∂n² u · curvature</option><option value="3">∂n³ u</option><option value="custom">Linear combination</option></select></label><label>Equals<input id="${prefix}-value" spellcheck="false" aria-label="${name} ${side} condition ${k+1} target"></label></div><div class="fourth-weights"><p class="helper">a₀u + a₁∂n u + a₂∂n² u + a₃∂n³ u</p><div class="fourth-coefficients">${[0,1,2,3].map(j=>`<label>a${j}<input class="fourth-coefficient" id="${prefix}-a${j}" spellcheck="false" aria-label="${name} ${side} condition ${k+1} coefficient ${j}"></label>`).join('')}</div><p class="helper">Constant expressions or parameters; targets may depend on x and t.</p></div>`;
+        endpoint.append(condition);
+      }
+      fourth.append(endpoint);
+    }
+    wrapper.append(fourth);
+    for(const side of ['left','right'])for(let k=0;k<2;k++){
+      const prefix=`fourth-${name}-${side}-${k}`,bc=values[i]?.boundaries?.[side]?.conditions?.[k],coefficients=bc?.coefficients??boundaryWeights(k);
+      coefficients.forEach((v,j)=>{$(`${prefix}-a${j}`).value=v;});$(`${prefix}-value`).value=bc?.value??'0';
+      const simple=[0,1,2,3].find(order=>JSON.stringify(coefficients)===JSON.stringify(boundaryWeights(order)));$(`${prefix}-order`).value=simple===undefined?'custom':String(simple);fourthRowDisplay(prefix);
+    }
   }
   boundaryDisplay();
 }
-function readFields() { return ['u','v','w'].slice(0, Number($('field-count').value)).map(name => ({rhs: $(`rhs-${name}`)?.value || '0', initial: $(`initial-${name}`)?.value || '0', exact: $(`exact-${name}`)?.value || '', boundaries:Object.fromEntries(['left','right','bottom','top'].map(side=>[side,{type:$(`bc-${name}-${side}-type`)?.value??'dirichlet',value:$(`bc-${name}-${side}-value`)?.value??'0'}]))})); }
+function readFields() { return ['u','v','w'].slice(0, Number($('field-count').value)).map(name => ({rhs: $(`rhs-${name}`)?.value || '0', initial: $(`initial-${name}`)?.value || '0', exact: $(`exact-${name}`)?.value || '', boundaries:Object.fromEntries(['left','right','bottom','top'].map(side=>[side,{type:$(`bc-${name}-${side}-type`)?.value??'dirichlet',value:$(`bc-${name}-${side}-value`)?.value??'0',...(['left','right'].includes(side)?{conditions:[0,1].map(k=>({coefficients:[0,1,2,3].map(j=>$(`fourth-${name}-${side}-${k}-a${j}`)?.value??(j===k?'1':'0')),value:$(`fourth-${name}-${side}-${k}-value`)?.value??'0'}))}:{})}]))})); }
+function fourthRowDisplay(prefix){$(`${prefix}-order`).closest('.fourth-condition').querySelector('.fourth-weights').classList.toggle('hidden',$(`${prefix}-order`).value!=='custom');}
 function boundaryDisplay(){
-  const periodic=$('boundary-mode').value==='periodic',two=$('dimension').value==='2';
-  document.querySelectorAll('.boundary-editor').forEach(el=>el.classList.toggle('hidden',periodic));
+  const periodic=$('boundary-mode').value==='periodic',fourth=$('boundary-mode').value==='fourth-order',two=$('dimension').value==='2';
+  document.querySelectorAll('.boundary-editor').forEach(el=>el.classList.toggle('hidden',periodic||fourth));
+  document.querySelectorAll('.fourth-boundary-editor').forEach(el=>el.classList.toggle('hidden',!fourth));
   document.querySelectorAll('.boundary-row').forEach(el=>el.classList.toggle('hidden',!two&&['bottom','top'].includes(el.dataset.side)));
-  $('boundary-help').classList.toggle('hidden',periodic);
+  $('boundary-help').classList.toggle('hidden',periodic||fourth);$('fourth-help').classList.toggle('hidden',!fourth);$('dimension').querySelector('option[value="2"]').disabled=fourth;
   $('domain-help').textContent=periodic?'x ∈ [−Lx/2, Lx/2). Opposite edges are joined.':'x ∈ [−Lx/2, Lx/2]'+(two?', y ∈ [−Ly/2, Ly/2].':'.')+' Values are computed at cell centers; each edge has its own boundary data.';
 }
-const boundaryLabel=c=>c.boundary==='periodic'?'periodic':'Dirichlet / Neumann';
+const boundaryLabel=c=>c.boundary==='periodic'?'periodic':c.boundary==='fourth-order'?'fourth-order boundary conditions':'Dirichlet / Neumann';
 function dimensions() {
   const two = $('dimension').value === '2'; $('length-y-label').classList.toggle('hidden', !two);
   [...$('grid-size').options].forEach(o => { o.disabled = two && Number(o.value) > 128; });
   if (two && Number($('grid-size').value) > 128) $('grid-size').value = '64';
   boundaryDisplay();
 }
-function applyConfig(c) {
+function applyConfig(c,presetId='') {
+  $('preset').value=presetId;
   $('experiment-title').value = c.title; $('dimension').value = String(c.dimension); $('field-count').value = String(c.fields.length);
-  $('boundary-mode').value=c.boundary==='periodic'||!c.boundary?'periodic':'nonperiodic';
+  $('boundary-mode').value=c.boundary==='periodic'||!c.boundary?'periodic':c.boundary==='fourth-order'?'fourth-order':'nonperiodic';
   if(['dirichlet','neumann'].includes(c.boundary))c={...c,fields:c.fields.map(f=>({...f,boundaries:f.boundaries??Object.fromEntries(['left','right','bottom','top'].map(side=>[side,{type:c.boundary,value:'0'}]))}))};
   $('parameters').value = c.parameters; $('length-x').value = c.Lx; $('length-y').value = c.Ly;
   $('end-time').value = c.T; $('time-step').value = c.dt; $('grid-size').value = String(c.N);
   if (![...$('frame-count').options].some(o => Number(o.value) === c.frames)) $('frame-count').add(new Option(String(c.frames), String(c.frames)));
   $('frame-count').value = String(c.frames); editorFields(c.fields.length, c.fields); dimensions();
 }
-function readConfig() { return {title: $('experiment-title').value, dimension: Number($('dimension').value), fields: readFields(), parameters: $('parameters').value, Lx: Number($('length-x').value), Ly: Number($('length-y').value), N: Number($('grid-size').value), T: Number($('end-time').value), dt: Number($('time-step').value), frames: Number($('frame-count').value), boundary: $('boundary-mode').value==='periodic'?'periodic':'nonperiodic'}; }
+function readConfig() { return {title: $('experiment-title').value, dimension: Number($('dimension').value), fields: readFields(), parameters: $('parameters').value, Lx: Number($('length-x').value), Ly: Number($('length-y').value), N: Number($('grid-size').value), T: Number($('end-time').value), dt: Number($('time-step').value), frames: Number($('frame-count').value), boundary: ['periodic','fourth-order'].includes($('boundary-mode').value)?$('boundary-mode').value:'nonperiodic'}; }
 function changed() { if (!busy) { status('Settings changed. Run to update the figures; exports retain the last successful experiment.'); $('result-state').textContent = result ? 'Previous run' : 'Ready'; } }
 function setBusy(value) {
   busy = value;
@@ -119,9 +139,9 @@ function acceptResult(next) {
   $('display-field').replaceChildren(...c.fields.map((f, i) => new Option(f.name, String(i))));
   $('studio-timeline').max = result.frames.length - 1;
   $('result-title').textContent = c.title; $('result-state').textContent = 'Computed';
-  $('method-description').textContent = `${result.method} Actual Δt = ${fmt(result.dt)}; ${result.steps} steps. Runtime ${(result.elapsedMs/1000).toFixed(2)} s. `+(c.boundary==='periodic'?`Initial projection difference: ${fmt(result.initialProjectionRelativeL2)} (relative L²).`:`Largest implicit-solve residual: ${fmt(result.linearSolve.maxAbsoluteResidual)} (absolute Euclidean norm). Initial boundary mismatch: ${result.initialBoundaryMismatch.map(fmt).join(', ')}. Reactions and transport remain explicit; time-step refinement is essential.`);
+  $('method-description').textContent = `${result.method} Actual Δt = ${fmt(result.dt)}; ${result.steps} steps. Runtime ${(result.elapsedMs/1000).toFixed(2)} s. `+(c.boundary==='periodic'?`Initial projection difference: ${fmt(result.initialProjectionRelativeL2)} (relative L²).`:`Largest implicit-solve residual: ${fmt(result.linearSolve.maxAbsoluteResidual)} (${c.boundary==='fourth-order'?'infinity norm; backward error '+fmt(result.linearSolve.maxRelativeBackwardError):'absolute Euclidean norm'}). Initial boundary mismatch: ${result.initialBoundaryMismatch.map(fmt).join(', ')}. Reactions and transport remain explicit; time-step refinement is essential.`);
   $('studio-warnings').replaceChildren(...result.warnings.map(w => {const li = document.createElement('li'); li.textContent = w; return li;}));
-  const resolutionWarnings=result.warnings.filter(w=>!w.startsWith('A smooth animation')&&!w.startsWith('A completed bounded-domain run')&&!w.includes('remain explicit'));
+  const resolutionWarnings=result.warnings.filter(w=>!w.startsWith('A smooth animation')&&!w.startsWith('A completed bounded-domain run')&&!w.startsWith('A completed fourth-order run')&&!w.includes('remain explicit'));
   $('quality-note').textContent=resolutionWarnings.join(' ');$('quality-note').classList.toggle('visible',resolutionWarnings.length>0);
   $('refinement-result').innerHTML = '<p class="helper">Not checked for this run. Compare time and spatial resolution separately.</p>';
   exportButtons.forEach(id => { $(id).disabled = false; }); $('refine-studio').disabled = false;
@@ -202,7 +222,7 @@ function renderFrame() {
   let checkBox=$('reference-check');
   if(!checkBox){checkBox=document.createElement('p');checkBox.id='reference-check';checkBox.className='helper';$('refinement-result').after(checkBox);}
   const check=result.referenceChecks?.[field];
-  checkBox.textContent=check?`Supplied reference: initial RMS mismatch ${fmt(check.initialRmsMismatch)}; largest sampled PDE residual RMS ${fmt(check.maximumSampledRmsResidual)} at t = 0, T/2, T. `+(c.boundary==='periodic'?'These use spectral spatial and finite-difference time derivatives.':'These use the finite-volume spatial operator and finite-difference time derivatives. Maximum sampled boundary mismatch: '+fmt(check.maximumBoundaryMismatch)+'.')+' Numerical checks, not a symbolic proof.':c.fields.some(f=>f.exact)?'PDE residual sampling requires a smooth reference for every active field.':'Optional: supply reference formulas to compare initial data and sample the PDE residual.';
+  checkBox.textContent=check?`Supplied reference: initial RMS mismatch ${fmt(check.initialRmsMismatch)}; largest sampled PDE residual RMS ${fmt(check.maximumSampledRmsResidual)} at t = 0, T/2, T. `+(c.boundary==='periodic'?'These use spectral spatial and finite-difference time derivatives.':'These use the '+(c.boundary==='fourth-order'?'finite-difference':'finite-volume')+' spatial operator and finite-difference time derivatives. Maximum sampled boundary mismatch: '+fmt(check.maximumBoundaryMismatch)+'.')+' Numerical checks, not a symbolic proof.':c.fields.some(f=>f.exact)?'PDE residual sampling requires a smooth reference for every active field.':'Optional: supply reference formulas to compare initial data and sample the PDE residual.';
   $('field-heading').textContent=c.dimension===2?'A field across the domain':'The evolving field';
   $('field-subtitle').textContent=c.dimension===2?'Color scale fixed across the entire run':referenceAsts[field]?'Solid: computed · dashed: supplied reference · fixed vertical scale':'Fixed vertical scale across the entire run';
   $('field-colorbar').classList.toggle('hidden',c.dimension!==2);$('field-low').textContent=fmt(ranges[field][0]);$('field-high').textContent=fmt(ranges[field][1]);
@@ -223,6 +243,13 @@ function renderDiagnostics() {
   const {ctx,width,height}=canvas('studio-diagnostics'),g=axes(ctx,width,height,{xmin:0,xmax:result.config.T,ymin:min,ymax:max,xlabel:'t'});lines(ctx,g,series);
 }
 function renderSpectrum() {
+  if(result.config.boundary==='fourth-order'){
+    const series={x:result.frames.map(s=>s.t),y:result.frames.map(s=>s.diagnostics[field].boundaryConstraintResidual)},maximum=Math.max(1e-14,...series.y);
+    const {ctx,width,height}=canvas('studio-spectrum'),g=axes(ctx,width,height,{xmin:0,xmax:result.config.T,ymin:0,ymax:1.1*maximum,xlabel:'t',ylabel:'Discrete boundary-row residual'});lines(ctx,g,[series]);
+    $('studio-spectrum').setAttribute('aria-label','Residual of the four discrete boundary constraints over time');
+    $('spectrum-note').textContent='Largest absolute residual of the four specified boundary rows, evaluated on the reconstructed boundary traces. This checks numerical enforcement, not continuum accuracy. Inspect reference error and time/grid refinement separately. Odd normal derivatives change sign at the left endpoint.';
+    return;
+  }
   if(result.config.boundary!=='periodic'){
     const series={x:result.frames.map(s=>s.t),y:result.frames.map(s=>s.diagnostics[field].boundaryMassRate)},min=Math.min(...series.y),max=Math.max(...series.y),span=Math.max(1e-8,max-min);
     const {ctx,width,height}=canvas('studio-spectrum'),g=axes(ctx,width,height,{xmin:0,xmax:result.config.T,ymin:min-.08*span,ymax:max+.08*span,xlabel:'t',ylabel:'Diffusive mass input rate'});lines(ctx,g,[series]);
@@ -286,10 +313,20 @@ async function recordVideo(){
 }
 function shareLink(){if(!result)return;const bytes=new TextEncoder().encode(JSON.stringify(result.config));let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);const encoded=btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');const url=new URL(location.href);url.hash='experiment='+encoded;$('share-link').value=url.href;$('share-link-box').classList.remove('hidden');$('share-link').select();navigator.clipboard?.writeText(url.href).then(()=>toast('Experiment link copied.')).catch(()=>toast('Select and copy the displayed experiment link.'));}
 
+$('preset').add(new Option('Custom / imported experiment',''));
 for(const p of PRESETS)$('preset').add(new Option(p.label,p.id));
-$('preset').onchange=()=>{const p=PRESETS.find(p=>p.id===$('preset').value);applyConfig(presetConfig(p.id));$('preset-description').textContent=p.description;changed();};
-$('boundary-mode').onchange=()=>{const mode=$('boundary-mode').value;if(mode==='dirichlet'||mode==='neumann'){document.querySelectorAll('.boundary-row select').forEach(el=>{el.value=mode;});document.querySelectorAll('.boundary-row input').forEach(el=>{el.value='0';});}boundaryDisplay();changed();};
-document.querySelector('#field-editors').addEventListener('input',e=>{if(e.target.closest('.boundary-row'))$('boundary-mode').value='nonperiodic';});
+$('preset').onchange=()=>{const p=PRESETS.find(p=>p.id===$('preset').value);if(!p)return;applyConfig(presetConfig(p.id),p.id);$('preset-description').textContent=p.description;changed();};
+$('boundary-mode').onchange=()=>{const mode=$('boundary-mode').value;if(mode==='dirichlet'||mode==='neumann'){document.querySelectorAll('.boundary-editor .boundary-row select').forEach(el=>{el.value=mode;});document.querySelectorAll('.boundary-editor .boundary-row input').forEach(el=>{el.value='0';});}if(mode==='fourth-order')$('dimension').value='1';dimensions();boundaryDisplay();changed();};
+document.querySelector('#field-editors').addEventListener('input',e=>{
+  if(e.target.closest('.boundary-editor .boundary-row'))$('boundary-mode').value='nonperiodic';
+  if(e.target.closest('.fourth-condition')){e.target.closest('.fourth-endpoint').querySelector('.fourth-pair').value='custom';if(e.target.classList.contains('fourth-coefficient')){const prefix=e.target.closest('.fourth-condition').dataset.prefix;$(`${prefix}-order`).value='custom';fourthRowDisplay(prefix);}}
+});
+document.querySelector('#field-editors').addEventListener('change',e=>{
+  if(e.target.classList.contains('fourth-order-select')){const prefix=e.target.closest('.fourth-condition').dataset.prefix;if(e.target.value!=='custom')boundaryWeights(Number(e.target.value)).forEach((v,j)=>{$(`${prefix}-a${j}`).value=v;});fourthRowDisplay(prefix);}
+  if(e.target.classList.contains('fourth-pair')&&e.target.value!=='custom'){
+    [...e.target.value].forEach((order,k)=>{const prefix=`fourth-${e.target.dataset.field}-${e.target.dataset.side}-${k}`;$(`${prefix}-order`).value=order;boundaryWeights(Number(order)).forEach((v,j)=>{$(`${prefix}-a${j}`).value=v;});$(`${prefix}-value`).value='0';fourthRowDisplay(prefix);});
+  }
+});
 $('field-count').onchange=()=>{editorFields(Number($('field-count').value),readFields());changed();};
 $('dimension').onchange=()=>{dimensions();editorFields(Number($('field-count').value),readFields());changed();};
 document.querySelector('.studio-editor').addEventListener('input',changed);
@@ -309,4 +346,4 @@ let initial=presetConfig('heat');$('preset-description').textContent=PRESETS[0].
 if(location.hash.startsWith('#experiment=')) {
   try{const encoded=location.hash.slice(12);if(encoded.length>16000)throw Error('The shared configuration is too large.');const text=atob(encoded.replace(/-/g,'+').replace(/_/g,'/'));initial=validateConfig(JSON.parse(new TextDecoder().decode(Uint8Array.from(text,c=>c.charCodeAt(0)))));$('preset-description').textContent='Shared experiment. Review the configuration and click Run; shared links never start computations automatically.';applyConfig(initial);status('Shared configuration loaded. Review the equations, then run.');}
   catch(e){applyConfig(initial);status('Could not load the shared experiment: '+e.message,true);}
-} else {applyConfig(initial);run();}
+} else {applyConfig(initial,'heat');run();}

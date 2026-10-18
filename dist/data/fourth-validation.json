@@ -1,0 +1,161 @@
+{
+  "schema": "phaseatlas-fourth-validation/v1",
+  "createdAt": "2026-10-18T14:00:58.301029+00:00",
+  "solverVersion": "phaseatlas-fourth-sbdf2-1.0.0",
+  "scope": "Independent NumPy boundary reconstruction and centered differences with SciPy BDF on the same cell-centered grid. Agreement is not a continuum error bound. The separate refinement records compare known exact/manufactured solutions.",
+  "reproduce": [
+    "node tests/fourth_reference_fixtures.mjs",
+    "python research/check_fourth_reference.py"
+  ],
+  "cases": [
+    {
+      "case": "supported",
+      "N": 32,
+      "T": 0.1,
+      "dt": 0.0005,
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.5778459865528296,
+          "rms": 0.6415690150064474,
+          "browserRelativeL2Difference": 1.6977159868399762e-07
+        }
+      ],
+      "referenceMethod": "SciPy solve_ivp BDF; NumPy quartic boundary closures and centered differences; rtol=1e-9, atol=1e-11"
+    },
+    {
+      "case": "clamped",
+      "N": 32,
+      "T": 0.1,
+      "dt": 0.0005,
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.4825803592911572,
+          "rms": 0.57679336521784,
+          "browserRelativeL2Difference": 1.0426501195136035e-06
+        }
+      ],
+      "referenceMethod": "SciPy solve_ivp BDF; NumPy quartic boundary closures and centered differences; rtol=1e-9, atol=1e-11"
+    },
+    {
+      "case": "custom-time",
+      "N": 32,
+      "T": 0.1,
+      "dt": 0.002,
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.10000000000001208,
+          "rms": 0.11053017151880601,
+          "browserRelativeL2Difference": 3.5636005672453024e-13
+        }
+      ],
+      "referenceMethod": "SciPy solve_ivp BDF; NumPy quartic boundary closures and centered differences; rtol=1e-9, atol=1e-11"
+    },
+    {
+      "case": "mae03-front",
+      "N": 128,
+      "T": 0.01,
+      "dt": 2.5e-05,
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.46896061918842813,
+          "rms": 0.6572933047440426,
+          "browserRelativeL2Difference": 1.6716859267328725e-08
+        }
+      ],
+      "referenceMethod": "SciPy solve_ivp BDF; NumPy quartic boundary closures and centered differences; rtol=1e-9, atol=1e-11"
+    },
+    {
+      "case": "mae03-perturbed",
+      "N": 128,
+      "T": 0.01,
+      "dt": 2.5e-05,
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.47442875833243137,
+          "rms": 0.6614402095281524,
+          "browserRelativeL2Difference": 2.2834901633563456e-08
+        }
+      ],
+      "referenceMethod": "SciPy solve_ivp BDF; NumPy quartic boundary closures and centered differences; rtol=1e-9, atol=1e-11"
+    },
+    {
+      "case": "coupled",
+      "N": 16,
+      "T": 0.02,
+      "dt": 0.0001,
+      "fields": [
+        {
+          "field": "u",
+          "mean": 0.4783269714377625,
+          "rms": 0.5751548525892186,
+          "browserRelativeL2Difference": 1.6279143432240568e-07
+        },
+        {
+          "field": "v",
+          "mean": 0.3049738626796371,
+          "rms": 0.33836363154399085,
+          "browserRelativeL2Difference": 8.71904273696841e-08
+        }
+      ],
+      "referenceMethod": "SciPy solve_ivp BDF; NumPy quartic boundary closures and centered differences; rtol=1e-9, atol=1e-11"
+    }
+  ],
+  "convergence": {
+    "spatial": [
+      {
+        "N": 16,
+        "dt": 5e-05,
+        "relativeL2": 0.000528648919107889
+      },
+      {
+        "N": 32,
+        "dt": 5e-05,
+        "relativeL2": 0.00014425886339084284
+      },
+      {
+        "N": 64,
+        "dt": 5e-05,
+        "relativeL2": 3.7592051833413384e-05
+      }
+    ],
+    "temporal": [
+      {
+        "N": 32,
+        "dt": 0.004,
+        "relativeL2": 3.969950603723196e-05
+      },
+      {
+        "N": 32,
+        "dt": 0.002,
+        "relativeL2": 9.83314832506228e-06
+      },
+      {
+        "N": 32,
+        "dt": 0.001,
+        "relativeL2": 2.447129802502832e-06
+      }
+    ],
+    "mae03": [
+      {
+        "N": 128,
+        "dt": 2.5e-05,
+        "relativeL2": 9.789210405544073e-05
+      },
+      {
+        "N": 256,
+        "dt": 2.5e-05,
+        "relativeL2": 2.4636055121226152e-05
+      },
+      {
+        "N": 512,
+        "dt": 2.5e-05,
+        "relativeL2": 6.158716610991555e-06
+      }
+    ]
+  }
+}
