@@ -13,11 +13,11 @@
     "studio-bounded.js": "7c80ca6244e4a4fc68fa7bc4ee619544185677069bdf7a87d4ad824b73001cea",
     "studio-fourth.js": "9c52eb2ade35af8064faf777e52166dde609e366d9f0b2516ede46b5edafbd26",
     "studio-expression.js": "ecc4f2221c22648288bf3137163abe04ddfa5e7baef2e84b7bf98c8265050e22",
-    "studio-presets.js": "3f5ad8bed2d16f6362ea444ef5af064105c8939c210fad4953b93b1a7fefb5d8",
+    "studio-presets.js": "d08c865e46b153be41a3ab27dc08c83952d660ff1ab9f58ea2d8667f16ab21ec",
     "research-audit.mjs": "2375d5a87d9af27556a83d457627ffbdcb1036b84f1214615359fb09ead37da1",
     "research-core.mjs": "70f1c7778007baf3cf6498c7cf46dae6975545c54f04de751016a98923bac1ca",
     "evidence-core.mjs": "7dbd5867a72df1439d72ca8a426a245afd8b1f7aa5fd272b2eaf2b52d3ec5f29",
-    "science.js": "aefd55686bfbb8b2331f5f1b2d86c1cdcb8d537905d10bec0ee8b2de7b52f89d"
+    "science.js": "6e50eadb75d2d84ddbcfd07b79664c6ac8f2c9cf8adbcbb4d30b241aea553f30"
   },
   "artifacts": {
     "submission-2026/demo-2min.txt": "9c156c1830b4e26167e4cf5f134416fbee87a17ced4a357f19da7a6f195d5780",
@@ -53,5 +53,6 @@
       "English mobile layout has no horizontal overflow"
     ],
     "errors": []
-  }
+  },
+  "sourceHashFormat": "SHA-256 of UTF-8 source with LF line endings"
 }

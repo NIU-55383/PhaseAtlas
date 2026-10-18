@@ -14,6 +14,7 @@ guide='''<!doctype html><html lang="en"><meta charset="utf-8"><title>PhaseAtlas 
 script=(root/'dist/submission-2026/demo-4min.txt').read_text(encoding='utf8')
 for dest in ['docs/DEMO_SCRIPT.md','dist/downloads/DEMO_SCRIPT.md']:
  (root/dest).write_text('# PhaseAtlas: current presentation script\n\nAuthor: Niu Te, Imperial College London. Baseline: 18 October 2026.\n\n'+script+'\n\nSee dist/submission-2026/PhaseAtlas_Submission_Kit.pdf for current requirements, caveats and the two-minute alternative.\n',encoding='utf8')
+manifest['sourceHashFormat']='SHA-256 of UTF-8 source with LF line endings'
 for p in (root/'dist/submission-2026').rglob('*'):
  if p.is_file() and p.name!='manifest.json':manifest['artifacts'][p.relative_to(root/'dist').as_posix()]=hashlib.sha256(p.read_bytes()).hexdigest()
 (root/'dist/submission-2026/manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf8')
