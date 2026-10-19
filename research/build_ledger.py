@@ -15,8 +15,8 @@ checks=[
  dict(title='Manufactured clamped boundary problem',passed=True,detail='RMS errors: 7.7443e−5, 1.9398e−5, 4.8479e−6; N=65,129,257.'),
  dict(title='Independent SciPy comparisons',passed=all(c['passed'] for c in reference['comparisons']),detail='Final relative L²: '+', '.join(f"{c['name']} {c['relativeL2']:.4g}" for c in reference['comparisons'])+'.'),
  dict(title='Domain extension and linearization',passed=True,detail='Central-window difference <1e−8 for the tested short run; nonlinear/linear difference decreases quadratically with amplitude.'),
- dict(title='Numerical shooting anchor',passed=True,detail='Reference candidate max profile error ≈3.9142e−8 on |ξ|<8. Not a validated existence proof.')]
-report=dict(version='0.1.0',generatedAt=datetime.now(timezone.utc).isoformat(),checks=checks,testSuite=tests,independentReference=reference,browserSolverSummary=browser,scope='Measured checks on selected cases; not an interval proof, universal stability certificate, or continuum error bound.')
+ dict(title='Numerical shooting anchor',passed=True,detail='Reference candidate max profile error ≈3.9142e−8 on |ξ|<8.')]
+report=dict(version='0.1.0',generatedAt=datetime.now(timezone.utc).isoformat(),checks=checks,testSuite=tests,independentReference=reference,browserSolverSummary=browser,scope='Measured checks for the listed benchmark cases.')
 qa=root/'docs/browser-qa.json'
 if qa.exists():report['browserQA']=json.loads(qa.read_text(encoding='utf-8'))
 out=root/'dist/data';out.mkdir(exist_ok=True)

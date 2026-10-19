@@ -4,7 +4,7 @@ export const BOUNDED_VERSION = 'phaseatlas-fv-sbdf2-1.1.0';
 export const BOUNDED_METHOD = 'Cell-centered finite volumes for diagonal diffusion; centered interior first derivatives with quadratic boundary closures; SBDF2 with backward-Euler startup; implicit diffusion solved by preconditioned conjugate gradients. Dirichlet/Neumann/passive Robin faces; no periodic extension or spectral filter.';
 export const sidesFor = dimension => dimension === 2 ? ['left','right','bottom','top'] : ['left','right'];
 const norm = a => Math.sqrt(a.reduce((s,v)=>s+v*v,0));
-function check(a) {for(const v of a)if(!Number.isFinite(v)||Math.abs(v)>1e8)throw Error('The bounded-domain computation became non-finite or exceeded the amplitude limit. Reduce the time step and check the model. This is not proof of blow-up.');}
+function check(a) {for(const v of a)if(!Number.isFinite(v)||Math.abs(v)>1e8)throw Error('The bounded-domain computation became non-finite or exceeded the amplitude limit. Reduce the time step and check the model.');}
 const array = (v,n) => typeof v === 'number' ? new Float64Array(n).fill(v) : v;
 
 export function makeBoundedGrid(config) {
@@ -155,7 +155,7 @@ function formulaBoundaryMismatch(ast,eq,prepared,time) {
 
 export async function simulateBounded(prepared,progress,yieldTask) {
   const {config,grid:g,constants,equations,operators}=prepared,start=performance.now(),steps=Math.ceil(config.T/config.dt),dt=config.T/steps;
-  const context={...constants,x:g.x,y:g.y,t:0},warnings=['A completed bounded-domain run does not certify convergence. Check time step, grid, boundary compatibility and physical units.'];
+  const context={...constants,x:g.x,y:g.y,t:0},warnings=[];
   const initialBoundaryMismatch=equations.map(eq=>formulaBoundaryMismatch(eq.initial,eq,prepared,0));
   if(initialBoundaryMismatch.some(v=>v>1e-5))warnings.push('Initial data do not match one or more boundary conditions. A boundary layer or initial transient may reduce accuracy; refine near the start.');
   let state=equations.map(eq=>array(evaluate(eq.initial,context,g),g.size));state.forEach(check);

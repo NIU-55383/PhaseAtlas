@@ -35,7 +35,7 @@
     {
       "title": "Numerical shooting anchor",
       "passed": true,
-      "detail": "Reference candidate max profile error ≈3.9142e−8 on |ξ|<8. Not a validated existence proof."
+      "detail": "Reference candidate max profile error ≈3.9142e−8 on |ξ|<8."
     }
   ],
   "testSuite": {
@@ -183,7 +183,7 @@
       }
     ]
   },
-  "scope": "Measured checks on selected cases; not an interval proof, universal stability certificate, or continuum error bound.",
+  "scope": "Measured checks for the listed benchmark cases.",
   "browserQA": {
     "pageErrors": [],
     "httpErrors": [],

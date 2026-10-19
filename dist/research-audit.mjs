@@ -26,7 +26,7 @@ export function balanceAudit(experiment,field=0){
   }
   return {schema:'phaseatlas-balance-audit/v1',field:names[field],rows,
     maximumAbsoluteDefect:Math.max(...rows.map(r=>Math.abs(r.balanceDefect))),maximumOperatorClosure:Math.max(...rows.map(r=>Math.abs(r.operatorClosure))),maximumBoundaryResidual:Math.max(...rows.map(r=>r.boundaryResidual)),
-    interpretation:'Recomputed from saved arrays and model data; imported diagnostics are ignored. Boundary rate is diffusive input (positive into the domain). Bulk includes reactions, sources and non-diffusive transport as written. Trapezoidal integration uses saved times, so the balance defect includes temporal discretization and output-sampling error. An operator-closure residual is an algebraic consistency check, not continuum accuracy or physical validation.'};
+    interpretation:'Recomputed from saved arrays and model data; imported diagnostics are ignored. Boundary rate is diffusive input (positive into the domain). Bulk includes reactions, sources and non-diffusive transport as written. Trapezoidal integration uses saved times, so the balance defect includes temporal discretization and output-sampling error. Operator closure measures discrete algebraic consistency.'};
 }
 
 export function metricValue(experiment,settings){

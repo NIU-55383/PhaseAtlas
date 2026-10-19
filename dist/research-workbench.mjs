@@ -79,7 +79,7 @@ function renderResolution(){
         for(const row of resolution.rows){$('resolution').append(node('h3',`${row.field}: observed order ${fmt(row.observedOrder)}`),node('p',`RMS differences: ${fmt(row.d01)} → ${fmt(row.d12)}. ${row.status}`,'subtle'));series.push({name:row.field,x:[1,2],y:[row.d01,row.d12]});}
         $('resolution').append(node('p',resolution.comparison,'subtle'));
       }catch(e){$('resolution').append(node('p',e.message,'notice'));}
-    }else $('resolution').append(node('p','Three completed, compatible levels are required. Failed or canceled runs do not count as accuracy evidence.','subtle'));
+    }else $('resolution').append(node('p','Three completed runs with compatible settings are required.','subtle'));
   }else $('resolution').append(node('p','Run three spatial levels or three time steps to estimate an observed order.','subtle'));
   drawLines($('resolution-plot'),series,{xlabel:'adjacent comparison',ylabel:'RMS difference',log:true,height:230});$('evidence-export').disabled=!resolution;
 }

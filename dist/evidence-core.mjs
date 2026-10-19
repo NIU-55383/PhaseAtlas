@@ -99,9 +99,9 @@ export function compareThree(experiments,axis='space') {
     const observedOrder=d01>floor&&d12>floor?Math.log(d01/d12)/Math.log(ratio):null;
     const referenceScale=statistics(vectors[2]).rms;
     return {field:f.name,d01,d12,relativeD01:referenceScale>floor?d01/referenceScale:null,relativeD12:referenceScale>floor?d12/referenceScale:null,
-      observedOrder,roundoffHeuristic:floor,status:observedOrder===null?'Differences near floating-point resolution; order withheld.':observedOrder<=0?'Differences do not decrease. Refine further and inspect the model.':'Differences decrease on these three levels; this alone does not establish convergence.'};
+      observedOrder,roundoffHeuristic:floor,status:observedOrder===null?'Differences near floating-point resolution; order withheld.':observedOrder<=0?'Differences do not decrease. Refine further and inspect the model.':'Differences decrease across the three levels.'};
   });
   return {axis,ratio,levels,grids:runs.map(e=>e.config.N),timeSteps:runs.map(e=>e.dt),rows,
     comparison:axis==='space'&&a.config.boundary!=='periodic'?'Adjacent-grid differences are formed first, using the same refinement ratio. The finer difference is then interpolated onto the coarsest cell-center grid. Interpolation contributes to the measured order.':'Adjacent-level final-field differences are compared on the same coarsest grid at the same final time.',
-    limitation:'Observed order is a finite-resolution diagnostic, not a rigorous error estimate. Check more levels, temporal/spatial contamination and domain sensitivity separately. No theorem, stability certification or physical validation is inferred.'};
+    limitation:'Observed order from three resolutions. Check time-step and domain sensitivity separately.'};
 }

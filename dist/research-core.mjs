@@ -45,7 +45,7 @@ export function buildPlan(raw,kind,options={}){
   insist(work<=240000000,'The combined study exceeds 240 million field-grid-point steps. Reduce duration, grid or parameter count.');
   insist(stored<=6000000,'This study would retain over six million values. Reduce saved frames, grid or parameter count.');
   return {schema:'phaseatlas-study/v1',createdAt:new Date().toISOString(),baseConfig:base,kind,options:{...options},jobs,work,stored,
-    interpretation:kind==='sweep'?'Finite-time initial-value scan. It does not trace stationary branches or classify bifurcations.':'Independent experiments with recorded discretizations. Numerical evidence does not constitute a proof.'};
+    interpretation:kind==='sweep'?'Finite-time parameter scan.':'Independent experiments with recorded grid sizes and time steps.'};
 }
 export function makeObserver(experiment,source){
   const c=experiment.config,prepared=prepare(c),g=makeGrid(c),names=c.fields.map(f=>f.name),constants={...parseParameters(c.parameters),Lx:c.Lx,Ly:c.Ly};
@@ -132,7 +132,7 @@ export function waveDiagnostics(e,field=0,{level=.5,center=0,radius=5,eta=0,maxS
   });
   rows.forEach((r,i)=>{const a=rows[Math.max(0,i-1)],b=rows[Math.min(rows.length-1,i+1)];r.speed=r.position!==null&&a.position!==null&&b.position!==null&&b.t>a.t?(b.position-a.position)/(b.t-a.t):null;});
   return {field:f.name,reference:refAst?'supplied formula at each time':'initial numerical profile',level,center,radius,eta,maxShift,rows,
-    limitation:'Alignment minimizes a sampled squared difference over a fixed window; interpolation and a bounded shift search limit accuracy. Threshold speed is withheld when a unique crossing is absent. These are finite-time diagnostics, not a stability or convective/absolute classification.'};
+    limitation:'Alignment minimizes a sampled squared difference over a fixed window; interpolation and a bounded shift search limit accuracy. Threshold speed is withheld when a unique crossing is absent.'};
 }
 export function gaussianSeed(config,field,x,y,amplitude,radius){
   insist(config.boundary==='periodic','Initial-data seeds currently require periodic boundaries.');

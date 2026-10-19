@@ -8,7 +8,7 @@ export const boundaryWeights=order=>[0,1,2,3].map(k=>k===order?'1':'0');
 const factorial=[1,1,2,6,24,120,720];
 const stencil={1:[[-1,-.5],[1,.5]],2:[[-1,1],[0,-2],[1,1]],3:[[-2,-.5],[-1,1],[1,-1],[2,.5]],4:[[-2,1],[-1,-4],[0,6],[1,-4],[2,1]]};
 const asArray=(v,n)=>typeof v==='number'?new Float64Array(n).fill(v):v;
-function finite(v){for(const a of v)if(!Number.isFinite(a)||Math.abs(a)>1e8)throw Error('The fourth-order computation became non-finite or exceeded the amplitude limit. Reduce the time step, refine the grid and inspect the model. This does not establish mathematical blow-up.');return v;}
+function finite(v){for(const a of v)if(!Number.isFinite(a)||Math.abs(a)>1e8)throw Error('The fourth-order computation became non-finite or exceeded the amplitude limit. Reduce the time step, refine the grid and inspect the model.');return v;}
 
 // Small, row-scaled inverse used only to construct boundary interpolation weights.
 export function smallInverse(matrix){
@@ -155,7 +155,7 @@ function formulaMismatch(ast,eq,prepared,time){
 export async function simulateFourth(prepared,progress,yieldTask){
   const {config,grid,constants,equations,operators}=prepared,n=grid.n,start=performance.now(),steps=Math.ceil(config.T/config.dt),dt=config.T/steps;
   const context={...constants,x:grid.x,t:0},names=config.fields.map(f=>f.name),linear=equations.map(eq=>fourthOperator(eq,grid)),systems=[1,1.5].map(alpha=>linear.map(op=>factorFourth(op.rows,alpha,dt)));
-  const warnings=['A completed fourth-order run does not certify convergence or well-posedness. Custom boundary pairs can change the spectrum and stability. Refine time step and grid.'];
+  const warnings=[];
   const initialBoundaryMismatch=equations.map(eq=>formulaMismatch(eq.initial,eq,prepared,0));
   if(initialBoundaryMismatch.some(v=>v>1e-5))warnings.push('Initial data may not match all four boundary conditions (sampled one-sided derivative check). Initial layers or incompatibility can reduce accuracy.');
   let state=equations.map(eq=>finite(asArray(evaluate(eq.initial,context,grid),n))),previous=null,previousR=null,maxResidual=0,maxBackwardError=0,maxBoundaryResidual=0;

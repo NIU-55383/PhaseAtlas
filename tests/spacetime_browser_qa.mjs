@@ -28,8 +28,8 @@ try{
   const png=await download('#studio-spacetime [data-key=export]','mae03-surface-export.png');assert.equal(png.readUInt32BE(16),2400);assert.equal(png.readUInt32BE(20),1600);
   checks.push('MAE03 real fourth-order run, synchronized reveal/player, camera controls and 2400×1600 PNG');
   await key('quantity').selectOption('reference');await page.waitForFunction(()=>document.querySelector('#studio-spacetime canvas').dataset.quantity==='reference');
-  assert.match(await key('note').textContent(),/not a certified error bound/);await surface.screenshot({path:path.join(qa,'mae03-reference-difference.png')});
-  await key('quantity').selectOption('change');assert.match(await key('note').textContent(),/not a stability measure/);checks.push('Signed reference and initial-frame differences retain scientific labels');
+  assert.match(await key('note').textContent(),/Signed difference from the supplied reference/);await surface.screenshot({path:path.join(qa,'mae03-reference-difference.png')});
+  await key('quantity').selectOption('change');assert.match(await key('note').textContent(),/Pointwise change from the first saved frame/);checks.push('Signed reference and initial-frame differences retain scientific labels');
   await key('canvas').focus();await page.keyboard.press('ArrowRight');assert.equal(await key('azimuth').inputValue(),'-30');await page.keyboard.press('+');assert.equal(await key('zoom').inputValue(),'1.05');await key('reset').click();assert.equal(await key('zoom').inputValue(),'1');checks.push('Keyboard rotation, zoom and camera reset');
   await page.locator('#refine-studio').click();await page.waitForFunction(()=>document.querySelector('#studio-status').textContent.startsWith('Two refinement'),{},{timeout:90000});
   const result=JSON.parse((await download('#export-studio-json','mae03-refined.json')).toString());assert.equal(result.refinement.refinedN,1024);assert.ok(result.refinement.spatial[0].relativeL2<.001);checks.push('Existing time/grid refinement and full JSON export retained');

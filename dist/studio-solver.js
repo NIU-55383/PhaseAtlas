@@ -264,7 +264,7 @@ export async function simulate(raw, progress = () => {}, yieldTask = () => Promi
   }
   if (projectedInitialError > 1e-3) warnings.push(`The initial projection removed ${(100 * projectedInitialError).toPrecision(3)}% in relative L2. Increase the grid or smooth the initial data.`);
   if (maximumTail > 1e-4) warnings.push('Significant energy reaches the highest retained modes. Increase spatial resolution and compare again.');
-  warnings.push('A smooth animation does not certify convergence, well-posedness or nonlinear stability. Non-polynomial and higher-degree nonlinearities can still alias.');
+
   const referenceChecks = [];
   if (equations.every(eq => eq.exact)) {
     // This checks the supplied formula against the entered PDE independently of

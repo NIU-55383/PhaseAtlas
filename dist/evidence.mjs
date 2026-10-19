@@ -83,7 +83,7 @@ function drawTrajectory(){
     ctx.fillText(c.fields[field].name,left,20);ctx.fillText('x',left+width/2,top+height+43);
     ctx.beginPath();ctx.strokeStyle='#0000cd';ctx.lineWidth=2.4;
     for(let i=0;i<c.N;i++){const xx=c.boundary==='periodic'?left+i/c.N*width:left+(i+.5)/c.N*width;if(i===0)ctx.moveTo(xx,y(v[i]));else ctx.lineTo(xx,y(v[i]));}ctx.stroke();
-    ctx.fillText('Saved grid samples; no endpoint reconstruction.',left,top+height+62,width);
+    ctx.fillText('Saved grid samples.',left,top+height+62,width);
   }else{
     const aspect=c.Lx/c.Ly;if(width/height>aspect){const next=height*aspect;left+=(width-next)/2;width=next;}else{const next=width/aspect;top+=(height-next)/2;height=next;}
     for(let j=0;j<c.N;j++)for(let i=0;i<c.N;i++){
@@ -94,7 +94,7 @@ function drawTrajectory(){
     ctx.strokeStyle='#bcc4df';ctx.strokeRect(left,top,width,height);ctx.fillStyle='#59647b';ctx.fillText(`x ∈ [${fmt(-c.Lx/2)}, ${fmt(c.Lx/2)}]`,left,top+height+26);ctx.fillText(`y ∈ [${fmt(-c.Ly/2)}, ${fmt(c.Ly/2)}]`,left,top-10);
   }
   $('timeline').value=frame;$('time').textContent=`t = ${fmt(snap.t)} / ${fmt(c.T)}`;
-  const d=statistics(v);$('scale').textContent=`Fixed ${c.fields[field].name} scale [${fmt(lo)}, ${fmt(hi)}] for this run. Mean = ${fmt(d.mean)}; RMS = ${fmt(d.rms)}. ${c.dimension===2?'Low → high: blue → white → orange. Physical aspect ratio preserved.':'Grid values are connected for display.'} Frames are replayed in their saved order, not in real physical time.`;
+  const d=statistics(v);$('scale').textContent=`Fixed ${c.fields[field].name} scale [${fmt(lo)}, ${fmt(hi)}] for this run. Mean = ${fmt(d.mean)}; RMS = ${fmt(d.rms)}. ${c.dimension===2?'Low → high: blue → white → orange. Physical aspect ratio preserved.':'Grid values are connected for display.'} Playback follows the saved frames.`;
 }
 function drawConvergence(){
   const {ctx,W,H}=context('convergence');ctx.font='14px Arial';ctx.fillStyle='#59647b';
@@ -111,15 +111,15 @@ function renderRecord(){
   if(!sources.length){box.append(node('p','Equations, boundary data, numerical method and source fingerprints will appear here.','subtle'));return;}
   currentReport={schema:'phaseatlas-evidence-report/v1',createdAt:new Date().toISOString(),axis:$('axis').value,study:currentStudy,
     sources:sources.map(s=>({name:s.name,sha256:s.sha256,fingerprintScope:s.fingerprintScope,...summarize(s.experiment)})),
-    scope:'Inspection of supplied trajectories, not a new solver run. Imported conclusions and refinement diagnostics are ignored. Fingerprints identify data and do not authenticate their origin.',
+    scope:'Comparisons recomputed from imported trajectories. Fingerprints identify the imported data.',
     missingChecks:['Independent trajectory reproduction','Continuous PDE residual verification','Domain-size sensitivity (when approximating an unbounded domain)','Physical model validation','Mathematical stability proof']};
   sources.forEach((s,i)=>{
     const d=node('details');d.open=i===selected;d.append(node('summary',`${i+1}. ${s.experiment.config.title||s.name} / model and method`));
     d.append(node('p',s.experiment.method));
     const c=s.experiment.config,lines=[`Parameters: ${c.parameters||'(none)'}`,`Domain: ${c.dimension}D, Lx=${c.Lx}${c.dimension===2?`, Ly=${c.Ly}`:''}`,`Boundaries: ${c.boundary}`];
-    for(const f of c.fields){lines.push(`${f.name}_t = ${f.rhs}`,`${f.name}(x,0) = ${f.initial}`);if(f.exact)lines.push(`Supplied reference (not verified here): ${f.exact}`);if(f.boundaries)lines.push(JSON.stringify(f.boundaries,null,2));}
+    for(const f of c.fields){lines.push(`${f.name}_t = ${f.rhs}`,`${f.name}(x,0) = ${f.initial}`);if(f.exact)lines.push(`Supplied reference: ${f.exact}`);if(f.boundaries)lines.push(JSON.stringify(f.boundaries,null,2));}
     d.append(node('pre',lines.join('\n')),node('p',`Solver: ${s.experiment.solverVersion}. Actual Δt=${fmt(s.experiment.dt)}; ${s.experiment.steps} steps.`,'subtle'),node('p',`SHA-256: ${s.sha256||'Unavailable in this browser context'}. ${s.fingerprintScope}.`,'fingerprint'));
-    for(const warning of currentReport.sources[i].sourceWarnings)d.append(node('p',`Source warning: ${warning}`,'source-warning'));
+    for(const warning of currentReport.sources[i].sourceWarnings){if(/^A (smooth animation|completed bounded-domain run|completed fourth-order run)/.test(warning))continue;d.append(node('p',`Source warning: ${warning}`,'source-warning'));}
     box.append(d);
   });
 }

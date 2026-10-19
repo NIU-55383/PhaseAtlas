@@ -8,8 +8,8 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.
 const browser=await chromium.launch({channel:'msedge',headless:true}),checks=[],errors=[];
 try{
  const page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/index.html');await page.locator('#play-case:enabled').waitFor();assert.equal(await page.title(),'PhaseAtlas | From PDE animations to numerical evidence');
- assert.equal(await page.locator('h1').textContent(),'From a PDE animationto evidence you can inspect.');checks.push('Focused homepage and recorded scientific data load');
+ await page.goto(base+'/index.html');await page.locator('#play-case:enabled').waitFor();assert.equal(await page.title(),'PhaseAtlas | PDE simulation and visualization');
+ assert.equal(await page.locator('h1').textContent(),'Simulate and visualizepartial differential equations.');checks.push('Focused homepage and recorded scientific data load');
  await page.locator('#play-case').click();await page.waitForFunction(()=>Number(document.querySelector('#case-time').value)>3);await page.locator('#play-case').click();await page.locator('#case-time').fill('120');assert.match(await page.locator('#case-label').textContent(),/3.00/);checks.push('Recorded animation plays, pauses and scrubs');
  const links=await page.locator('a[href]').evaluateAll(a=>a.map(x=>x.getAttribute('href')).filter(x=>!x.startsWith('http')&&!x.startsWith('#')));
  for(const href of new Set(links)){const response=await page.request.get(new URL(href,base).href);assert.equal(response.status(),200,href);}

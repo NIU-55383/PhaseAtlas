@@ -40,7 +40,7 @@ function editorFields(count, values = []) {
   for (let i = 0; i < count; i++) {
     const name = ['u','v','w'][i], wrapper = document.createElement('div'); wrapper.className = 'field-editor';
     // Fixed labels are markup; all supplied equation text is assigned through .value.
-    wrapper.innerHTML = `<label><span class="equation-label">∂${name} / ∂t =</span><textarea id="rhs-${name}" rows="2" spellcheck="false" aria-label="Right-hand side for ${name}"></textarea></label><label>${name}(x${Number($('dimension').value) === 2 ? ', y' : ''}, 0)<textarea id="initial-${name}" rows="2" spellcheck="false" aria-label="Initial data for ${name}"></textarea></label><details><summary>Reference formula (optional)</summary><label>Compare against ${name}(x, t)<textarea id="exact-${name}" rows="2" spellcheck="false" aria-label="Reference formula for ${name}"></textarea></label><p class="helper">A comparison function, not an automatically verified exact solution.</p></details>`;
+    wrapper.innerHTML = `<label><span class="equation-label">∂${name} / ∂t =</span><textarea id="rhs-${name}" rows="2" spellcheck="false" aria-label="Right-hand side for ${name}"></textarea></label><label>${name}(x${Number($('dimension').value) === 2 ? ', y' : ''}, 0)<textarea id="initial-${name}" rows="2" spellcheck="false" aria-label="Initial data for ${name}"></textarea></label><details><summary>Reference formula (optional)</summary><label>Compare against ${name}(x, t)<textarea id="exact-${name}" rows="2" spellcheck="false" aria-label="Reference formula for ${name}"></textarea></label></details>`;
     $('field-editors').append(wrapper);
     $(`rhs-${name}`).value = values[i]?.rhs ?? '0.1*lap('+name+')';
     $(`initial-${name}`).value = values[i]?.initial ?? (i === 0 ? 'sin(2*pi*x/Lx)' : '0');
@@ -234,9 +234,9 @@ function renderFrame() {
   $('stat-error').textContent=d.referenceRelativeL2 !== undefined ? fmt(d.referenceRelativeL2 ?? d.referenceRmsError) : '—';
   $('stat-reference').textContent=d.referenceRelativeL2 !== undefined ? d.referenceRelativeL2===null ? 'Absolute RMS · zero reference' : 'Relative L² · supplied formula' : 'No reference formula';
   let checkBox=$('reference-check');
-  if(!checkBox){checkBox=document.createElement('p');checkBox.id='reference-check';checkBox.className='helper';$('refinement-result').after(checkBox);}
+  if(!checkBox){checkBox=document.createElement('p');checkBox.id='reference-check';checkBox.className='helper';document.querySelector('.resolution-card details').append(checkBox);}
   const check=result.referenceChecks?.[field];
-  checkBox.textContent=check?`Supplied reference: initial RMS mismatch ${fmt(check.initialRmsMismatch)}; largest sampled PDE residual RMS ${fmt(check.maximumSampledRmsResidual)} at t = 0, T/2, T. `+(c.boundary==='periodic'?'These use spectral spatial and finite-difference time derivatives.':'These use the '+(c.boundary==='fourth-order'?'finite-difference':'finite-volume')+' spatial operator and finite-difference time derivatives. Maximum sampled boundary mismatch: '+fmt(check.maximumBoundaryMismatch)+'.')+' Numerical checks, not a symbolic proof.':c.fields.some(f=>f.exact)?'PDE residual sampling requires a smooth reference for every active field.':'Optional: supply reference formulas to compare initial data and sample the PDE residual.';
+  checkBox.textContent=check?`Supplied reference: initial RMS mismatch ${fmt(check.initialRmsMismatch)}; largest sampled PDE residual RMS ${fmt(check.maximumSampledRmsResidual)} at t = 0, T/2, T. `+(c.boundary==='periodic'?'These use spectral spatial and finite-difference time derivatives.':'These use the '+(c.boundary==='fourth-order'?'finite-difference':'finite-volume')+' spatial operator and finite-difference time derivatives. Maximum sampled boundary mismatch: '+fmt(check.maximumBoundaryMismatch)+'.'):c.fields.some(f=>f.exact)?'PDE residual sampling requires a smooth reference for every active field.':'Optional: supply reference formulas to compare initial data and sample the PDE residual.';
   $('field-heading').textContent=c.dimension===2?'A field across the domain':'The evolving field';
   $('field-subtitle').textContent=c.dimension===2?'Color scale fixed across the entire run':referenceAsts[field]?'Solid: computed · dashed: supplied reference · fixed vertical scale':'Fixed vertical scale across the entire run';
   $('field-colorbar').classList.toggle('hidden',c.dimension!==2);$('field-low').textContent=fmt(ranges[field][0]);$('field-high').textContent=fmt(ranges[field][1]);
@@ -262,18 +262,18 @@ function renderSpectrum() {
     const series={x:result.frames.map(s=>s.t),y:result.frames.map(s=>s.diagnostics[field].boundaryConstraintResidual)},maximum=Math.max(1e-14,...series.y);
     const {ctx,width,height}=canvas('studio-spectrum'),g=axes(ctx,width,height,{xmin:0,xmax:result.config.T,ymin:0,ymax:1.1*maximum,xlabel:'t',ylabel:'Discrete boundary-row residual'});lines(ctx,g,[series]);
     $('studio-spectrum').setAttribute('aria-label','Residual of the four discrete boundary constraints over time');
-    $('spectrum-note').textContent='Largest absolute residual of the four specified boundary rows, evaluated on the reconstructed boundary traces. This checks numerical enforcement, not continuum accuracy. Inspect reference error and time/grid refinement separately. Odd normal derivatives change sign at the left endpoint.';
+    $('spectrum-note').textContent='Largest absolute residual of the four specified boundary rows, evaluated on the reconstructed boundary traces. Check reference error and time/grid refinement separately. Odd normal derivatives change sign at the left endpoint.';
     return;
   }
   if(result.config.boundary!=='periodic'){
     const series={x:result.frames.map(s=>s.t),y:result.frames.map(s=>s.diagnostics[field].boundaryMassRate)},min=Math.min(...series.y),max=Math.max(...series.y),span=Math.max(1e-8,max-min);
     const {ctx,width,height}=canvas('studio-spectrum'),g=axes(ctx,width,height,{xmin:0,xmax:result.config.T,ymin:min-.08*span,ymax:max+.08*span,xlabel:'t',ylabel:'Diffusive mass input rate'});lines(ctx,g,[series]);
     $('studio-spectrum').setAttribute('aria-label','Diffusive boundary mass input over time');
-    $('spectrum-note').textContent='Net diffusive mass input through the boundary: ∫ D ∂n u ds. Positive means diffusion adds mass. This excludes reactions, sources and advective transport. For a closed diffusion-only system it should be zero. Neumann inputs are normal derivatives, not physical fluxes.';
+    $('spectrum-note').textContent='Net diffusive mass input through the boundary: ∫ D ∂n u ds. Positive means diffusion adds mass. This excludes reactions, sources and advective transport. For a closed diffusion-only system it should be zero. Neumann inputs specify the outward normal derivative.';
     return;
   }
   $('studio-spectrum').setAttribute('aria-label','Logarithmic Fourier energy by mode number');
-  $('spectrum-note').textContent='Spectrum of the selected frame. The projection retains |mode| < N/4 on each axis; N is the collocation grid, not the number of retained modes.';
+  $('spectrum-note').textContent='Spectrum of the selected frame. The projection retains |mode| < N/4 on each axis; N is the collocation grid size.';
   const c=result.config,v=grid.forward(result.frames[frame].values[field]),bins=new Float64Array(c.N/2+1);
   for(let j=0;j<grid.ny;j++)for(let i=0;i<c.N;i++){const mx=Math.min(i,c.N-i),my=Math.min(j,grid.ny-j),p=j*c.N+i;bins[Math.max(mx,my)]+=(v.re[p]**2+v.im[p]**2)/grid.size**2;}
   const peak=Math.max(1e-30,...bins),y=Array.from(bins,a=>Math.log10(Math.max(peak*1e-16,a))),ymax=Math.ceil(Math.log10(peak));

@@ -54,14 +54,14 @@ export function drawSpaceTime(ctx, W, H, data, {azimuth=-45,elevation=28,zoom=1,
 export function createSpaceTimeSurface(after, {id='spacetime',onFrame=()=>{}}={}) {
   if(!document.querySelector('link[data-spacetime-style]')){const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('./spacetime-surface.css',import.meta.url);link.dataset.spacetimeStyle='true';document.head.append(link);}
   const root=document.createElement('section');root.className='spacetime-panel';root.id=id;root.setAttribute('aria-label','Three-dimensional space-time surface');
-  root.innerHTML=`<div class="surface-heading"><div><p class="surface-kicker">SPACE / TIME / AMPLITUDE</p><h2>3D space-time surface</h2><p class="surface-caption">See the entire wave evolve, one saved trajectory at a time.</p></div><button data-key="export" disabled>Export PNG ↗</button></div>
+  root.innerHTML=`<div class="surface-heading"><div><h2>3D space-time surface</h2></div><button data-key="export" disabled>Export PNG ↗</button></div>
     <div class="surface-controls"><label>Height<select data-key="quantity"><option value="field">Selected field / observation</option><option value="change">Change from initial frame</option><option value="reference" disabled>Difference from reference</option></select></label>
     <label>Rotation<input data-key="azimuth" type="range" min="-180" max="180" value="-45" step="1"></label><label>Elevation<input data-key="elevation" type="range" min="10" max="75" value="28" step="1"></label><label>Zoom<input data-key="zoom" type="range" min="0.65" max="1.8" value="1" step="0.05"></label><button data-key="reset">Reset view</button>
     <label class="surface-toggle"><input data-key="reveal" type="checkbox">Reveal with playback</label></div>
     <canvas data-key="canvas" tabindex="0" role="img" aria-label="Space-time surface: x, t and amplitude. Drag to rotate. Arrow keys rotate and tilt; plus and minus zoom."></canvas>
     <div class="surface-playback"><button data-key="play" disabled>Play</button><input data-key="timeline" type="range" min="0" max="0" value="0" aria-label="Surface saved frame" disabled><output data-key="time">No trajectory</output></div>
-    <p class="surface-note" data-key="note" role="status">Run a one-dimensional experiment to display its space-time surface.</p>
-    <p class="surface-caption">Drag to rotate; use Zoom or + / − to magnify. Dark curve: selected saved frame (overlaid). Height and color scales stay fixed across the run. Display triangles connect saved samples; this view does not add solver accuracy.</p>`;
+    <details data-key="details"><summary>Plot details</summary><p class="surface-note" data-key="note" role="status">Run a one-dimensional experiment to display its space-time surface.</p></details>
+    <p class="surface-caption">Drag to rotate · + / − to zoom · Dark curve: selected frame · Fixed height and color scales</p>`;
   after.after(root);const el=key=>root.querySelector(`[data-key="${key}"]`),canvas=el('canvas');
   let source=null,data=null,frame=0,playing=false,last=0,visible=true,drawRequest=0,lastInfo=null;
   const options=()=>({azimuth:+el('azimuth').value,elevation:+el('elevation').value,zoom:+el('zoom').value,frame,reveal:el('reveal').checked,title:data?.quantity||''});
@@ -75,9 +75,9 @@ export function createSpaceTimeSurface(after, {id='spacetime',onFrame=()=>{}}={}
   function rebuild(){
     try{data=source?.config.dimension===1?buildSpaceTimeData(source.config,source.frames,source.rows,{mode:el('quantity').value,references:source.references,label:source.label}):null;
       for(const key of ['export','play','timeline','quantity'])el(key).disabled=!data;
-      if(data){el('timeline').max=data.times.length-1;const sampled=surfaceMesh(data);el('note').dataset.error='false';el('note').textContent=`${source.config.title} · ${data.x.length} spatial samples × ${data.times.length} saved times; display mesh up to ${sampled.columns.length} × ${sampled.rows.length}. ${data.boundary==='periodic'?'Periodic grid; the duplicated seam is omitted.':'Cell-center samples; boundary faces are not reconstructed in this view.'} ${data.mode==='reference'?'Signed difference from the supplied comparison formula; this is not a certified error bound.':data.mode==='change'?'Pointwise change from the first saved frame, not a stability measure.':''}`;updateFrame(frame);}
+      if(data){el('timeline').max=data.times.length-1;const sampled=surfaceMesh(data);el('note').dataset.error='false';el('note').textContent=`${source.config.title} · ${data.x.length} spatial samples × ${data.times.length} saved times; display mesh up to ${sampled.columns.length} × ${sampled.rows.length}. ${data.boundary==='periodic'?'Periodic grid; the duplicated seam is omitted.':'Cell-center samples.'} ${data.mode==='reference'?'Signed difference from the supplied reference formula.':data.mode==='change'?'Pointwise change from the first saved frame.':''}`;updateFrame(frame);}
       else{stop();el('time').textContent='No 1D trajectory';el('note').textContent=source?'This model has two spatial dimensions. Its x–y surface is available in the Research Workbench.':'Run a one-dimensional experiment to display its space-time surface.';schedule();}
-    }catch(error){data=null;stop();for(const key of ['export','play','timeline'])el(key).disabled=true;el('note').dataset.error='true';el('note').textContent=`Surface unavailable: ${error.message}`;schedule();}
+    }catch(error){data=null;stop();for(const key of ['export','play','timeline'])el(key).disabled=true;el('details').open=true;el('note').dataset.error='true';el('note').textContent=`Surface unavailable: ${error.message}`;schedule();}
   }
   el('quantity').onchange=()=>{stop();rebuild();};for(const key of ['azimuth','elevation','zoom','reveal'])el(key).oninput=schedule;
   el('reset').onclick=()=>{el('azimuth').value=-45;el('elevation').value=28;el('zoom').value=1;schedule();};
