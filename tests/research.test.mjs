@@ -68,11 +68,11 @@ test('constant fields and periodic ambiguous crossings do not yield spurious spe
   const flat=fixture({...rod,N:128,Lx:20},()=>.5),d=waveDiagnostics(flat,0,{level:.5,center:0,radius:4,maxShift:1});assert.ok(d.rows.every(r=>r.position===null&&r.shift===null&&r.speed===null));
   const e=fixture({...presetConfig('heat'),N:64},(x,t)=>Math.sin(x+.01-t)),a=waveDiagnostics(e,0,{level:0,center:0,radius:2,maxShift:.2});assert.ok(a.rows.every(r=>r.crossings===2&&r.position===null&&r.speed===null));
 });
-test('MAE03 numerical front retains supplied-reference and wave diagnostics',async()=>{
-  const e=await simulate({...presetConfig('mae03-front'),N:256,T:.005,dt:.00001,frames:5});
+test('Fourth-order numerical front retains supplied-reference and wave diagnostics',async()=>{
+  const e=await simulate({...presetConfig('fourth-order-front'),N:256,T:.005,dt:.00001,frames:5});
   const d=waveDiagnostics(e,0,{reference:'formula',level:.5,center:0,radius:5,maxShift:.5,eta:0});
   assert.ok(d.rows.at(-1).localL2<.002);close(d.rows.at(-1).speed,105/8,.15);assert.ok(d.rows.at(-1).alignedRms<.001);
-  console.log('MAE03 speed:',d.rows.at(-1).speed,'reference local L2:',d.rows.at(-1).localL2);
+  console.log('Fourth-order speed:',d.rows.at(-1).speed,'reference local L2:',d.rows.at(-1).localL2);
 });
 test('periodic initial seed is continuous at the seam and clears reference only for edited field',()=>{
   const c=prepare({...presetConfig('heat'),N:64}).config,next=gaussianSeed(c,0,3,0,.2,.3);

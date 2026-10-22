@@ -89,7 +89,7 @@ class Film:
         self.story=json.loads((HERE/'storyboard.json').read_text(encoding='utf-8'))
         self.duration=self.story['duration']
         self.demo=RecordedWalkthrough(HERE/'assets/studio-walkthrough.mp4')
-        self.summary=self.load('summary');self.cool=self.load('cooling');self.scan=self.load('cooling-scan');self.front=self.load('mae03-front')
+        self.summary=self.load('summary');self.cool=self.load('cooling');self.scan=self.load('cooling-scan');self.front=self.load('fourth-order-front')
         self.u=np.array([f['values'][0] for f in self.cool['frames']]);self.ts=np.array([f['t']for f in self.cool['frames']]);self.x=-1+(np.arange(self.u.shape[1])+.5)*2/self.u.shape[1]
         self.fw=np.array([f['w']for f in self.front['frames']])/.001;self.fx=np.array(self.front['x']);self.ft=np.array([f['t']for f in self.front['frames']]);self.mask=np.abs(self.fx)<=12
         self.norms={k:np.array([f['diag'][k]/self.front['frames'][0]['diag'][k]for f in self.front['frames']])for k in ['global','local','weighted']}
@@ -225,16 +225,66 @@ class Film:
     def scene_front(self,im,d,p):
         fit(d,(95,278),'uₜ = γuₓₓₓₓ − βuₓₓₓ + αuₓₓ − ∂ₓ(a u² + ⅔ b u³)',38,width=1720,fill=BLUE)
         text(d,(95,342),'Reference front: U(ξ) = ((1 + tanh(ξ/2))/2)^(3/2)',25,MUTED)
-        q=np.clip(p/0.88,0,1);ww=interpolate(self.fw,q);amp=float(np.max(np.abs(self.fw[:,self.mask])))*1.08
-        xy=axes(d,(170,431,965,739),(-12,12),(-amp,amp),[(-12,'−12'),(-6,'−6'),(0,'0'),(6,'6'),(12,'12')],[(v,str(v).replace('-','−'))for v in [-40,-20,0,20,40]],'Moving coordinate ξ','Disturbance / initial amplitude')
-        line(d,xy(self.fx[self.mask],ww[self.mask]),BLUE,4)
+        q=np.clip(p/0.88,0,1)
+        im.paste(self.front_surface(q),(92,381))
         vv=np.concatenate(list(self.norms.values()));lo=math.floor(np.log10(vv.min()));hi=max(1,math.ceil(np.log10(vv.max())))
         ab=axes(d,(1150,431,1790,739),(0,.06),(lo,hi),[(0,'0'),(.03,'0.03'),(.06,'0.06')],[(v,f'10^{v}')for v in range(lo,hi+1)],'Time t','Norm / initial norm (log scale)')
         n=max(2,int(len(self.ft)*q))
         for k,label,col,x in [('global','Global',BLUE,1118),('local','Local',ORANGE,1348),('weighted','Weighted',MUTED,1560)]:
             line(d,ab(self.ft[:n],np.log10(self.norms[k][:n])),col,4);d.line((x,849,x+38,849),fill=col,width=4);text(d,(x+50,829),label,26,INK)
-        text(d,(170,829),f't = {q*.06:.4f}     Initial amplitude = 0.001',27,INK,True)
-        text(d,(170,875),'MAE03 front laboratory · recorded numerical run',22,MUTED)
+        text(d,(170,839),f't = {q*.06:.4f}     Initial amplitude = 0.001',27,INK,True)
+        text(d,(170,875),'Fourth-order front laboratory · recorded numerical run',22,MUTED)
+
+    def front_surface(self,q):
+        """Fixed-scale x-t-w surface from the same stored arrays as the norms."""
+        if not hasattr(self,'surface_plate'):
+            width,height=975,438
+            plate=Image.new('RGB',(width,height),'white');dr=ImageDraw.Draw(plate)
+            xs=self.fx[self.mask];zs=self.fw[:,self.mask];limit=float(np.max(np.abs(zs)))
+            a,e=math.radians(-42),math.radians(26)
+            def project(x,t,z):
+                xx=-.8+1.6*(x-xs[0])/(xs[-1]-xs[0]);tt=-.65+1.3*t/self.ft[-1];zz=.5*z/limit
+                rx=xx*math.cos(a)-tt*math.sin(a);depth=xx*math.sin(a)+tt*math.cos(a)
+                return rx,depth*math.sin(e)-zz*math.cos(e),depth*math.cos(e)+zz*math.sin(e)
+            cube=np.array([project(x,t,z) for x in [xs[0],xs[-1]] for t in [0,self.ft[-1]] for z in [-limit,limit]])
+            lo=cube[:,:2].min(axis=0);hi=cube[:,:2].max(axis=0)
+            scale=min((width-160)/(hi[0]-lo[0]),(height-100)/(hi[1]-lo[1]));mid=(lo+hi)/2
+            def screen(x,t,z):
+                rx,ry,depth=project(x,t,z)
+                return (width*.5+(rx-mid[0])*scale,height*.49+(ry-mid[1])*scale,depth)
+            floor=[screen(x,t,-limit)[:2] for x,t in [(xs[0],0),(xs[-1],0),(xs[-1],self.ft[-1]),(xs[0],self.ft[-1])]]
+            dr.polygon(floor,fill='#f5f8fd',outline=LINE)
+            for ratio in np.linspace(0,1,5):
+                x=xs[0]+ratio*(xs[-1]-xs[0]);t=ratio*self.ft[-1]
+                line(dr,[screen(x,0,-limit)[:2],screen(x,self.ft[-1],-limit)[:2]],LINE,1)
+                line(dr,[screen(xs[0],t,-limit)[:2],screen(xs[-1],t,-limit)[:2]],LINE,1)
+            colors=np.array([[0,0,128],[45,80,199],[226,235,249],[246,214,177],[193,83,28]])
+            columns=np.unique(np.linspace(0,len(xs)-1,61).astype(int));rows=np.unique(np.linspace(0,len(self.ft)-1,53).astype(int));triangles=[]
+            for j,k in zip(rows[:-1],rows[1:]):
+                for i,l in zip(columns[:-1],columns[1:]):
+                    for cells in [[(j,i),(j,l),(k,l)],[(j,i),(k,l),(k,i)]]:
+                        points=[screen(xs[ii],self.ft[jj],zs[jj,ii]) for jj,ii in cells]
+                        v=np.mean([zs[jj,ii] for jj,ii in cells]);position=np.clip((v+limit)/(2*limit),0,1)*4
+                        ci=min(3,int(position));mix=position-ci;color=tuple(np.rint(colors[ci]*(1-mix)+colors[ci+1]*mix).astype(int))
+                        triangles.append((np.mean([p[2] for p in points]),[(p[0],p[1]) for p in points],color))
+            for _,points,color in sorted(triangles,key=lambda item:item[0]):dr.polygon(points,fill=color)
+            def label(value,x,t,z,dx=0,dy=0):
+                px,py,_=screen(x,t,z);text(dr,(px+dx,py+dy),value,18,MUTED,anchor='mm')
+            line(dr,[screen(xs[0],self.ft[-1],-limit)[:2],screen(xs[-1],self.ft[-1],-limit)[:2]],MUTED,1)
+            line(dr,[screen(xs[0],0,-limit)[:2],screen(xs[0],self.ft[-1],-limit)[:2]],MUTED,1)
+            line(dr,[screen(xs[0],0,-limit)[:2],screen(xs[0],0,limit)[:2]],MUTED,1)
+            for x in [-12,0,12]:label(str(x).replace('-','−'),x,self.ft[-1],-limit,9,16)
+            for t in [0,.03,.06]:label(f'{t:.2f}',xs[0],t,-limit,-25,9)
+            for z in [-limit,0,limit]:label(f'{z:.0f}',xs[0],0,z,-27,0)
+            label('ξ',0,self.ft[-1],-limit,10,43);label('t',xs[0],.03,-limit,-52,15)
+            text(dr,(15,4),'SPACE × TIME × DISTURBANCE',21,BLUE,True)
+            text(dr,(15,height-25),'Fixed height and colour scales · selected saved slice in navy',18,MUTED)
+            self.surface_plate=plate;self.surface_screen=screen;self.surface_x=xs;self.surface_values=zs
+        plate=self.surface_plate.copy();dr=ImageDraw.Draw(plate)
+        frame=min(len(self.ft)-1,round(q*(len(self.ft)-1)))
+        points=[self.surface_screen(x,self.ft[frame],z)[:2] for x,z in zip(self.surface_x,self.surface_values[frame])]
+        line(dr,points,'#ffffff',5);line(dr,points,'#071e64',2)
+        return plate
 
     def scene_reuse(self,im,d,p):
         crop=self.photos['exports'].crop((360,0,2110,1430))
@@ -295,7 +345,7 @@ def main():
             proc.kill();proc.wait();raise
     if result:raise SystemExit((out/'render-errors.log').read_text())
     film.demo.close()
-    manifest={'video':target.name,'durationSeconds':film.duration,'width':W,'height':H,'fps':args.fps,'fonts':'Segoe UI with verified Cambria Math fallback for missing mathematical glyphs','audioStatus':'Generic synthetic male narration, Kokoro am_puck; no voice cloning' if args.approved_audio else 'Silent visual rough cut','dataStatus':film.summary['status'],'playback':'Linear interpolation of stored numerical frames; no simulated data invented','sourceFiles':{n+'.json':hashlib.sha256((film.data/(n+'.json')).read_bytes()).hexdigest()for n in ['summary','cooling','cooling-scan','mae03-front']},'videoSha256':hashlib.sha256(target.read_bytes()).hexdigest()}
+    manifest={'video':target.name,'durationSeconds':film.duration,'width':W,'height':H,'fps':args.fps,'fonts':'Segoe UI with verified Cambria Math fallback for missing mathematical glyphs','audioStatus':'Generic synthetic male narration, Kokoro am_puck; no voice cloning' if args.approved_audio else 'Silent visual rough cut','dataStatus':film.summary['status'],'playback':'Linear interpolation of stored numerical frames; no simulated data invented','sourceFiles':{n+'.json':hashlib.sha256((film.data/(n+'.json')).read_bytes()).hexdigest()for n in ['summary','cooling','cooling-scan','fourth-order-front']},'videoSha256':hashlib.sha256(target.read_bytes()).hexdigest()}
     manifest['walkthrough']={'type':'Actual browser recording','seconds':60,'videoSha256':hashlib.sha256((HERE/'assets/studio-walkthrough.mp4').read_bytes()).hexdigest(),'exportSha256':hashlib.sha256((out/'demo-experiment.json').read_bytes()).hexdigest()}
     (out/'render-manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8');print(json.dumps({'video':str(target),'bytes':target.stat().st_size,'seconds':film.duration}),flush=True)
 if __name__=='__main__':main()

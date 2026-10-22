@@ -50,8 +50,8 @@ test('nonlinear conservative flux expressions use reconstructed boundary fields'
   const c=cfg();c.dt=.001;c.fields=[{rhs:'-kappa*Dx(u,4)-Dx(u^2/2,1)+1+u',initial:'1+x',exact:'1+x+t',boundaries:{left:pair(0,1,'0.5+t','-1'),right:pair(0,1,'1.5+t','1')}}];
   const a=await simulate({...c,dt:.002}),b=await simulate(c);assert.ok(error(a)/error(b)>3.5);assert.ok(error(b)<1e-6,String(error(b)));
 });
-test('MAE03 travelling-front error decreases on a finer grid',async()=>{
-  const c={...presetConfig('mae03-front'),N:128,T:.01,dt:.000025,frames:3};
+test('Fourth-order travelling-front error decreases on a finer grid',async()=>{
+  const c={...presetConfig('fourth-order-front'),N:128,T:.01,dt:.000025,frames:3};
   const a=await simulate(c),b=await simulate({...c,N:256});assert.ok(error(a)/error(b)>3.5,`${error(a)}/${error(b)}`);assert.ok(error(b)<.0001,String(error(b)));
 });
 test('invalid fourth-order boundary specifications fail explicitly',()=>{

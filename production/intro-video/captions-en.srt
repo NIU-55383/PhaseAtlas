@@ -107,113 +107,109 @@ Failed runs and unobserved threshold events remain explicit, so the map does not
 missing evidence.
 
 28
-00:01:40,270 --> 00:01:45,254
-The platform also connects to my earlier research on a fourth-order travelling front.
+00:01:40,270 --> 00:01:44,430
+For fourth-order equations, we can inspect a wave as a three-dimensional surface across space and
 
 29
-00:01:45,290 --> 00:01:49,475
-Here, we follow a small disturbance in a frame moving with the wave.
+00:01:44,430 --> 00:01:48,610
+time. Rotate the view, follow a selected time slice, and compare changes from the initial
 
 30
-00:01:50,050 --> 00:01:54,072
-Global, local, and weighted norms reveal different aspects of its evolution.
+00:01:48,610 --> 00:01:53,050
+state or a reference formula. The same saved trajectory drives the animation and the numerical
 
 31
-00:01:54,810 --> 00:02:01,010
-The Studio supports two custom linear boundary conditions at each end for supported one-dimensional fourth-order
+00:01:53,050 --> 00:01:57,715
+diagnostics. Global, local, and weighted norms help study wave motion and deformation.
 
 32
-00:02:01,010 --> 00:02:05,766
-equations. These tools help formulate and test research questions.
+00:01:57,970 --> 00:02:01,201
+Each endpoint can have two custom linear boundary conditions.
 
 33
-00:02:05,990 --> 00:02:10,193
-A simulation alone does not prove nonlinear stability.
-
-34
-00:02:11,270 --> 00:02:13,161
+00:02:02,270 --> 00:02:04,161
 The result is more than an animation.
 
-35
-00:02:13,630 --> 00:02:18,814
+34
+00:02:04,630 --> 00:02:09,814
 Researchers can export the model, parameters, trajectories, and numerical checks, alongside figures and video.
 
-36
-00:02:19,250 --> 00:02:22,464
+35
+00:02:10,250 --> 00:02:13,464
 Selected problems can be compared with an independent Python implementation.
 
-37
-00:02:22,770 --> 00:02:24,917
+36
+00:02:13,770 --> 00:02:15,917
 Computation runs on the user's device.
 
-38
-00:02:24,930 --> 00:02:29,130
+37
+00:02:15,930 --> 00:02:20,130
 That makes the workflow accessible for exploring a model, checking an idea, and sharing a
 
-39
-00:02:29,130 --> 00:02:31,091
+38
+00:02:20,130 --> 00:02:22,091
 reproducible calculation.
 
-40
-00:02:32,270 --> 00:02:34,090
+39
+00:02:23,270 --> 00:02:25,090
 Here is the workflow in the live Studio.
 
-41
-00:02:34,250 --> 00:02:37,244
+40
+00:02:25,250 --> 00:02:28,244
 Start from a heat-transfer model, then edit the equation and its parameters.
 
-42
-00:02:37,390 --> 00:02:40,070
+41
+00:02:28,390 --> 00:02:31,070
 Type the spatial derivatives directly into the equation box.
 
-43
-00:02:43,170 --> 00:02:46,710
+42
+00:02:34,170 --> 00:02:37,710
 I will use diffusion on a one-dimensional rod, with heat exchange at both ends.
 
-44
-00:02:46,730 --> 00:02:50,070
+43
+00:02:37,730 --> 00:02:41,070
 Each boundary has its own coefficients, so we can change the environment without rewriting the
 
-45
-00:02:50,070 --> 00:02:53,385
+44
+00:02:41,070 --> 00:02:44,385
 solver. The left and right ends can also use different boundary data.
 
-46
-00:02:57,090 --> 00:03:01,190
+45
+00:02:48,090 --> 00:02:52,190
 Now run the experiment. Play the saved solution, pause it, or scrub through time to
 
-47
-00:03:01,190 --> 00:03:08,658
+46
+00:02:52,190 --> 00:02:59,658
 inspect a particular frame. Then choose Check resolution.
 
-48
-00:03:08,890 --> 00:03:11,970
+47
+00:02:59,890 --> 00:03:02,970
 The platform reruns the model with a smaller time step and a finer grid, and
 
-49
-00:03:11,970 --> 00:03:15,602
+48
+00:03:02,970 --> 00:03:06,602
 reports the differences. This comparison is something we can actually check.
 
-50
-00:03:18,250 --> 00:03:20,485
+49
+00:03:09,250 --> 00:03:11,485
 Finally, export the experiment as JSON.
 
-51
-00:03:20,630 --> 00:03:24,830
+50
+00:03:11,630 --> 00:03:15,830
 It includes the configuration, the saved fields, and the numerical checks, so another researcher can
 
-52
-00:03:24,830 --> 00:03:27,099
+51
+00:03:15,830 --> 00:03:18,099
 inspect and reproduce the calculation.
 
-53
-00:03:32,270 --> 00:03:37,710
+52
+00:03:23,270 --> 00:03:28,710
 The longer-term goal is a research platform that helps people ask better mathematical questions and
 
-54
-00:03:37,710 --> 00:03:42,377
+53
+00:03:28,710 --> 00:03:33,377
 inspect the evidence together. I am Niu Te from Imperial College London.
 
-55
-00:03:42,670 --> 00:03:44,929
+54
+00:03:33,670 --> 00:03:35,929
 This is PhaseAtlas.

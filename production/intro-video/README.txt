@@ -2,7 +2,7 @@ PHASEATLAS / INTRODUCTION VIDEO / REVISED EDITION
 
 Final deliverable
   output/PhaseAtlas-introduction-v2.mp4
-  227 seconds (3:47), 1920 x 1080, 24 fps, H.264 video and AAC narration.
+  218 seconds (3:38), 1920 x 1080, 24 fps, H.264 video and AAC narration.
   English captions are burned in and also supplied as SRT.
   Generic synthetic male voice, aiming for a young researcher style.
   This is not a clone of Niu Te's voice. No personal recording is used.
@@ -49,13 +49,13 @@ accent and voice preference remain subjective.
 
 Scientific evidence
 Dynamic plots use existing data in dist/data/submission-2026/:
-cooling.json, cooling-scan.json, mae03-front.json and summary.json.
+cooling.json, cooling-scan.json, fourth-order-front.json and summary.json.
 Playback linearly interpolates saved fields. No numerical data are invented.
 The examples belong to the 18 Oct 2026 pre-event baseline.
 Cooling is dimensionless, not a calibrated material prediction.
 The three-grid refinement estimate is not a rigorous error bound.
 The finite-time response map is not a bifurcation diagram.
-Front data come from the model-specific MAE03 front laboratory.
+Front data come from the model-specific Fourth-order front laboratory.
 The disturbance is w / 0.001, with a fixed scale across all frames.
 No animation or norm history is proof of nonlinear stability.
 
@@ -92,3 +92,5 @@ after pacing, then assemble, master and render. The exported numerical data
 and event timestamps are in output/demo-experiment.json and
 output/demo-recording-manifest.json.
 
+
+Release update: 3D space-time wave surface, revised natural-speed narration, and generic fourth-order model labels.

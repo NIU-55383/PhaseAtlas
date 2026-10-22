@@ -140,7 +140,7 @@ Temporal and spatial refinement error-difference ratios were about 3.96 and 3.95
 
 ## 7. Provenance, application, and future paper
 
-The project builds on the user's earlier MAE03 research and subsequently corrected notes. The exact solutions and stability literature are prior structure. New work in this deliverable comprises the browser scientific workbench, numerical implementation, independent reference, verification workflow, interactive visualizations and reproducibility exports. Development was AI-assisted; no external LLM is called at runtime. The project makes no claim of autonomous theorem discovery.
+The project builds on the user's earlier Fourth-order research and subsequently corrected notes. The exact solutions and stability literature are prior structure. New work in this deliverable comprises the browser scientific workbench, numerical implementation, independent reference, verification workflow, interactive visualizations and reproducibility exports. Development was AI-assisted; no external LLM is called at runtime. The project makes no claim of autonomous theorem discovery.
 
 Immediate users are nonlinear-wave researchers, scientific computing developers and instructors. They can audit formulas, generate controlled perturbation experiments, examine spectral mechanisms and share reproducible results. Pattern-formation equations motivate potential later physical links, but this parameter set has not been calibrated against an experiment or engineering system.
 

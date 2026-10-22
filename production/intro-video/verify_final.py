@@ -24,7 +24,7 @@ for s in timeline['segments']:
 captions=json.loads((HERE/'captions-aligned.json').read_text(encoding='utf-8'))
 assert captions[-1]['end']<duration
 script=' '.join(s['narration']for s in story['scenes'])
-assert 'API' not in script and 'I used AI assistance' not in script
+assert 'MAE03' not in script and 'API' not in script and 'I used AI assistance' not in script
 assert all('API' not in c['text'] and 'pre-event baseline' not in c['text']for c in captions)
 frames=[round((s['sceneStart']+.66*(s['sceneEnd']-s['sceneStart']))*24)for s in timeline['segments']]
 select='+'.join(f'eq(n,{n})'for n in frames)

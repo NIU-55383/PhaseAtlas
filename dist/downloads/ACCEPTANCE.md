@@ -37,4 +37,4 @@ Shooting candidates, finite-time norm histories and far-field bounds do not esta
 
 A future Nonlinearity paper needs a new mathematical contribution and a verified literature gap. This platform supports that work; it does not claim completed persistence, nonlinear stability or interval-arithmetic proofs.
 
-The presentation identifies earlier MAE03 research as its mathematical foundation and the software as the new deliverable. Check the organizer's current requirements, prior-work policy and author details before submission. Hosting instructions are in `DEPLOYMENT.md`.
+The presentation identifies earlier Fourth-order research as its mathematical foundation and the software as the new deliverable. Check the organizer's current requirements, prior-work policy and author details before submission. Hosting instructions are in `DEPLOYMENT.md`.

@@ -6,7 +6,7 @@ from studio_reference import run
 
 root = Path(__file__).resolve().parent.parent
 records = []
-for name in ['supported', 'clamped', 'custom-time', 'mae03-front', 'mae03-perturbed', 'coupled']:
+for name in ['supported', 'clamped', 'custom-time', 'fourth-order-front', 'fourth-order-perturbed', 'coupled']:
     browser = json.loads((root/f'research/validation/fourth-{name}.json').read_text())
     reference = run(browser)
     fields = [{k:v for k,v in f.items() if k != 'finalValues'} for f in reference['fields']]

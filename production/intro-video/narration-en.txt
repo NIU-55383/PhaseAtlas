@@ -16,14 +16,14 @@ A convincing animation is only the first step. We test the boundary implementati
 01:19–01:40 | Turn one run into a research question.
 Next, compare a family of experiments. This map asks how much heat remains after a fixed time, as diffusion and boundary exchange change. Every cell represents a completed numerical trajectory that can be replayed. Researchers can select their own observables. Failed runs and unobserved threshold events remain explicit, so the map does not silently hide missing evidence.
 
-01:40–02:11 | From the original equation to new questions.
-The platform also connects to my earlier research on a fourth-order travelling front. Here, we follow a small disturbance in a frame moving with the wave. Global, local, and weighted norms reveal different aspects of its evolution. The Studio supports two custom linear boundary conditions at each end for supported one-dimensional fourth-order equations. These tools help formulate and test research questions. A simulation alone does not prove nonlinear stability.
+01:40–02:02 | Fourth-order waves in space and time.
+For fourth-order equations, we can inspect a wave as a three-dimensional surface across space and time. Rotate the view, follow a selected time slice, and compare changes from the initial state or a reference formula. The same saved trajectory drives the animation and the numerical diagnostics. Global, local, and weighted norms help study wave motion and deformation. Each endpoint can have two custom linear boundary conditions.
 
-02:11–02:32 | Make the result useful to someone else.
+02:02–02:23 | Make the result useful to someone else.
 The result is more than an animation. Researchers can export the model, parameters, trajectories, and numerical checks, alongside figures and video. Selected problems can be compared with an independent Python implementation. Computation runs on the user's device. That makes the workflow accessible for exploring a model, checking an idea, and sharing a reproducible calculation.
 
-02:32–03:32 | A complete experiment, in one minute.
+02:23–03:23 | A complete experiment, in one minute.
 Here is the workflow in the live Studio. Start from a heat-transfer model, then edit the equation and its parameters. Type the spatial derivatives directly into the equation box. I will use diffusion on a one-dimensional rod, with heat exchange at both ends. Each boundary has its own coefficients, so we can change the environment without rewriting the solver. The left and right ends can also use different boundary data. Now run the experiment. Play the saved solution, pause it, or scrub through time to inspect a particular frame. Then choose Check resolution. The platform reruns the model with a smaller time step and a finer grid, and reports the differences. This comparison is something we can actually check. Finally, export the experiment as JSON. It includes the configuration, the saved fields, and the numerical checks, so another researcher can inspect and reproduce the calculation.
 
-03:32–03:47 | From PDE animations to numerical evidence.
+03:23–03:38 | From PDE animations to numerical evidence.
 The longer-term goal is a research platform that helps people ask better mathematical questions and inspect the evidence together. I am Niu Te from Imperial College London. This is PhaseAtlas.

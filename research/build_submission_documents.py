@@ -63,10 +63,13 @@ def build(name,title,pages,brief=False):
  for i,seq in enumerate(pages):text+='<section class="page">'+(f'<h1>{title}</h1><p class="meta">{AUTHOR}<br/>{DATE}</p>' if i==0 else '')+htmlblocks(seq)+'</section>'
  text+='</main></html>';(out/(name+'.html')).write_text(text,encoding='utf8')
  n=len(PdfReader(out/(name+'.pdf')).pages);print(name,n,'pages');return n
-assert build('PhaseAtlas_One_Page','PhaseAtlas<br/>From PDE animations to reproducible evidence',[ONE_PAGE],True)==1,'The submission summary must be one page'
+# The final one-page summary has its own dense figure layout.
 assert build('PhaseAtlas_Article',TITLE,ARTICLE)==6,'Review article pagination'
 assert build('PhaseAtlas_Submission_Kit','PhaseAtlas<br/>Submission kit & presentation scripts',KIT)==4,'Review kit pagination'
 (out/'social-post.txt').write_text(SOCIAL,encoding='utf8')
 for name,sections in [('demo-4min',SCRIPT4),('demo-2min',SCRIPT2)]:
  (out/(name+'.txt')).write_text('\n\n'.join('\n'.join(row) for row in sections),encoding='utf8')
 shutil.copy2(out/'PhaseAtlas_One_Page.pdf',root/'docs/PhaseAtlas_Project_Brief.pdf');shutil.copy2(out/'PhaseAtlas_One_Page.pdf',root/'dist/downloads/PhaseAtlas_Project_Brief.pdf')
+
+import runpy
+runpy.run_path(str(root/'research/build_submission_one_page.py'))

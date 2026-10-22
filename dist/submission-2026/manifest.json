@@ -1,12 +1,12 @@
 {
-  "date": "2026-10-18",
+  "date": "2026-10-23",
   "author": "Niu Te",
   "affiliation": "Imperial College London",
-  "status": "Pre-event baseline; not posted or submitted",
+  "status": "Submission materials; publication and official submission are separate steps",
   "numericTests": {
-    "passed": 90,
+    "passed": 96,
     "failed": 0,
-    "command": "node --test tests/science.test.mjs tests/studio.test.mjs tests/boundaries.test.mjs tests/fourth.test.mjs tests/evidence.test.mjs tests/research.test.mjs tests/robin.test.mjs"
+    "command": "node --test tests/science.test.mjs tests/studio.test.mjs tests/boundaries.test.mjs tests/fourth.test.mjs tests/evidence.test.mjs tests/research.test.mjs tests/robin.test.mjs tests/spacetime.test.mjs"
   },
   "sources": {
     "studio-solver.js": "f51d78083fb67f1a175727a157c2123efa6928cbca9ba29c1881453c95ae7f3e",
@@ -22,22 +22,33 @@
   "artifacts": {
     "submission-2026/demo-2min.txt": "9c156c1830b4e26167e4cf5f134416fbee87a17ced4a357f19da7a6f195d5780",
     "submission-2026/demo-4min.txt": "3f178a1c82fd9f8dce40d601e18e437e4b2934bdcafcada24bd5834571ad6bef",
-    "submission-2026/Package_README.html": "93d3d8a7c4cb77971f6d14b52d458ec07c82c38bdf08d49b82a34b4352e3ff9e",
-    "submission-2026/PhaseAtlas_Article.html": "e89dd4d2e740c55488ea23b3cfaaf495c4e9403b6b4c7dc397a0f5629aea9a00",
-    "submission-2026/PhaseAtlas_Article.pdf": "6fd0be666e4b5759534d684018ba072eada1314a2a56453abddadfdf151219fd",
-    "submission-2026/PhaseAtlas_One_Page.html": "75a8a7f66a28bfd8c610a36fedd56470c36ef0659f0690fe1f3fc28ff479bf72",
-    "submission-2026/PhaseAtlas_One_Page.pdf": "d79ed7faa01427d8187d3a9d8bd8824c03f8d70681830ae5698ddaaf927e2b37",
-    "submission-2026/PhaseAtlas_Submission_Kit.html": "82a800a917920d218cdb41668d0b399b14f990e1b6abf66d6e7adb206260ee11",
-    "submission-2026/PhaseAtlas_Submission_Kit.pdf": "129ab5acc6d6b2af69f44c440504abf6c95493096ac2d5935fd88bc945799034",
+    "submission-2026/Package_README.html": "7f7a0d60b3a53c486bb5a180efa570811fcf96427c9764df8b4c4f87020898cf",
+    "submission-2026/PhaseAtlas_Article.html": "69b7d0c9235938094ba00cc6726dda5f0b96314a1f0ef2b5dd6e3275e43e10db",
+    "submission-2026/PhaseAtlas_Article.pdf": "efde9c91ed63fe899a8f6d530facb5082ffa7854c14e909520083c64f28dec3e",
+    "submission-2026/PhaseAtlas_One_Page.html": "a43de7ec516cf245c284961912c875d3cc623edee22a2b92d5368f11ffb56aa7",
+    "submission-2026/PhaseAtlas_One_Page.pdf": "dcabe6ac42e8f8c714fc1e9ad4fd85ebef2152dc46fecee84d3573c0c158463b",
+    "submission-2026/PhaseAtlas_Submission_Kit.html": "66731f1b03262d8f4f89f957e09d33cd941bec52dce7a62695f1b8e8848e0640",
+    "submission-2026/PhaseAtlas_Submission_Kit.pdf": "9940dff83d610d4cb8626f146092ea3e9e7324cfa569947416d05fd6e011af45",
     "submission-2026/social-post.txt": "81aa24a575f4a512a7b07f22a9cfa08ec173ae497c82deb6a036285bc1b5108e",
     "submission-2026/figures/cooling.png": "0938cfcd86939603a913976ce6e850604aba95809b707cc4ef54885431b71758",
     "submission-2026/figures/cooling.svg": "404db7e30605e154a460c990584d28a069337e5022c0737ca22d870ac8eb2231",
+    "submission-2026/figures/heatmap.png": "83681853bbf3121d0976462f6cd1226d494c2692cd49465d196a77e01e99f2c6",
+    "submission-2026/figures/heatmap.svg": "73c70840db6f78bdabc8ecf71f762006e5e52e6f6bb72a3658f6c5caa8c15ad6",
+    "submission-2026/figures/observables-compact.png": "2c781305b315b7d4133d2e627e94ad0ee62ec86c8102d1e776b26f34cf40dfb9",
+    "submission-2026/figures/observables-compact.svg": "2ec49e715ff06d63e167da1d31966b2ee1143626ce83140b46fbf109ba98c344",
+    "submission-2026/figures/one-page-preview.png": "356a5545c59c4566f8b0aa8e5ad1e08311c238321dc7e966feeb1e7e8dbbca50",
     "submission-2026/figures/parameter-map.png": "7c0694704af46e662697082ffc5ca20d6e9d350a517b505fdec50c303fcf32b2",
     "submission-2026/figures/parameter-map.svg": "fa3dcfee8e6b4a679dc0f19d6d3fba0174d08c95fc03a2a344ced5dac4be5a2c",
+    "submission-2026/figures/profiles-compact.png": "0f91f210451b08e535da66eccca6ced89490b7da5b01c64f8aca460c7a86a1cf",
+    "submission-2026/figures/profiles-compact.svg": "bd0366563c040c1728bce8abe55e3a67f807f14f93af5691629ddf4981126193",
+    "submission-2026/figures/scan-compact.png": "bd77e5c8f6b7f50c0b8ebd7fcd6fb43cccfb191a33c3264f3fc87923b2432b6e",
+    "submission-2026/figures/scan-compact.svg": "50020bb9d7e8a501e62589a136556668bf52734f887fa7f9fb326d280de08603",
+    "submission-2026/figures/surface.png": "df60b774d45fb2f99800837d7d25cf1df267914424f1e1e695068aec3c808b2b",
+    "submission-2026/figures/surface.svg": "4de8bbac11f3f1d1988f9fe23b82adda0306b254a05e3d4c0f9dcb06d1d5df1c",
     "submission-2026/figures/verification.png": "8e69186aab353d88f1331e3f3d89309612d7f9938dcb06e28744cee98cbd08e1",
     "submission-2026/figures/verification.svg": "0153276d869f5859e64b49d3ada654d70a8c06fbb280eec054bfbf4e23439e96",
-    "submission-2026/figures/wave.png": "5aecfe3ab56f81b21a696d7012c75683e4bd6269b50ed8944013376b8e366906",
-    "submission-2026/figures/wave.svg": "7358ebb2cb2f72ced47a86c7b806d771401e03bdfecd96d9bf3d7398ebc47f51"
+    "submission-2026/figures/wave.png": "22498b94c24fe3464f44a9d537bd727ea0011ed7109eeb8c4189572a688bf194",
+    "submission-2026/figures/wave.svg": "eeeae491af19ecc2fb3540ef3dfa270e98091ce332f8f6dac325f30000d45d94"
   },
   "presentationQA": {
     "checks": [
@@ -53,6 +64,19 @@
       "English mobile layout has no horizontal overflow"
     ],
     "errors": []
+  },
+  "caseDataGeneratedAt": "2026-10-18T15:25:14.610Z",
+  "currentSourceHashes": {
+    "evidence-core.mjs": "be4c75860423ad80bd43df51838523f5677cd70cb4a1ce41489d05df5aad64dc",
+    "evidence.mjs": "e04c66c1133bbc2b4eedb44f0dec72af695a18dd38aa1e834bae5ef06ab08b1b",
+    "project.mjs": "7df3b8a3f8ddc272e6a44fd6c8ff2d2f925c0c175b046061c20801efa2c54ba0",
+    "research-audit.mjs": "d1359237592e022b98605b20f38083c4fd3c002e7a8740931758af1d3251bba3",
+    "research-bridge.mjs": "119fb67b6a868bd6603969e06ff6489e05f4cf038751d632f84835fa9acf9ea9",
+    "research-core.mjs": "acdb46c03f1b4c579c725c2dd40d0da95cc70e3d297d05b899d8186ee0355eb8",
+    "research-plots.mjs": "57e564e81b0da68c859c343c6a2e0f6b72b05fe579f3f7dea0a769a58b2a6370",
+    "research-workbench.mjs": "cda16b7fe9b52d2a7208b6b50d35604b5fb3f036830f896717ab70f3afb425ae",
+    "spacetime-core.mjs": "777bf374cbe34b58fcb81ddd1562655741f14d96b46f66211a7995c2ee7ffeea",
+    "spacetime-surface.mjs": "21d5cb49db7faa0398b61821586d4ced922584cf9e4d029851addadf8498a1ce"
   },
   "sourceHashFormat": "SHA-256 of UTF-8 source with LF line endings"
 }

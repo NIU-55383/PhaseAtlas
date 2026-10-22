@@ -1,6 +1,6 @@
 # PhaseAtlas: current presentation script
 
-Author: Niu Te, Imperial College London. Baseline: 18 October 2026.
+Author: Niu Te, Imperial College London. Presentation materials.
 
 0:00-0:35 | The problem
 Homepage: show the real cooling animation.

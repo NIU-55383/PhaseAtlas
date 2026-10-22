@@ -25,8 +25,8 @@ fig,ax=plt.subplots(figsize=(7.5,3.7),layout='constrained');z=np.array([q['mean'
 for j in range(4):
  for i in range(4):ax.text(i,j,f'{z[j,i]:.3f}',ha='center',va='center',color='white' if z[j,i]>.68 else '#193451')
 fig.colorbar(im,ax=ax,label='Dimensionless temperature');save(fig,'parameter-map')
-f=load('mae03-front');xx=np.array(f['x']);tt=np.array([a['t'] for a in f['frames']]);ww=np.array([a['w'] for a in f['frames']]);mask=np.abs(xx)<=12
-fig,ax=plt.subplots(1,2,figsize=(10,3.4),layout='constrained');vmax=np.max(np.abs(ww[:,mask]/.001));im=ax[0].imshow(ww[:,mask]/.001,extent=[xx[mask][0],xx[mask][-1],tt[-1],0],aspect='auto',cmap='RdBu_r',vmin=-vmax,vmax=vmax);ax[0].set(xlabel='Moving coordinate xi',ylabel='Time t',title='A. MAE03 disturbance / initial amplitude');fig.colorbar(im,ax=ax[0],fraction=.045)
+f=load('fourth-order-front');xx=np.array(f['x']);tt=np.array([a['t'] for a in f['frames']]);ww=np.array([a['w'] for a in f['frames']]);mask=np.abs(xx)<=12
+fig,ax=plt.subplots(1,2,figsize=(10,3.4),layout='constrained');vmax=np.max(np.abs(ww[:,mask]/.001));im=ax[0].imshow(ww[:,mask]/.001,extent=[xx[mask][0],xx[mask][-1],tt[-1],0],aspect='auto',cmap='RdBu_r',vmin=-vmax,vmax=vmax);ax[0].set(xlabel='Moving coordinate xi',ylabel='Time t',title='A. Fourth-order disturbance / initial amplitude');fig.colorbar(im,ax=ax[0],fraction=.045)
 for key,label,c in [('global','Global L2',blue),('local','Local L2',orange),('weighted','Weighted L2',gray)]:
  vals=np.array([a['diag'][key] for a in f['frames']]);ax[1].semilogy(tt,vals/vals[0],label=label,color=c,lw=1.8)
 ax[1].set(xlabel='Time t',ylabel='Norm / initial norm',title='B. Different questions, different norms');ax[1].legend(fontsize=8);ax[1].grid(alpha=.15);save(fig,'wave')
