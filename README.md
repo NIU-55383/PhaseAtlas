@@ -1,93 +1,117 @@
 # PhaseAtlas
 
-## Current competition snapshot - 18 October 2026
+An interactive PDE research workspace for editing models, visualizing their evolution and checking numerical accuracy. Researchers and instructors can study heat transfer, nonlinear waves and reaction–diffusion systems, compare experiments and export reusable calculations.
 
-The homepage now introduces the research workflow; the original wave laboratory is at `dist/front.html`. Latest submission copy, article, figures and scripts are in `dist/submission-2026/`. Numerical case data are in `dist/data/submission-2026/`. The package is a pre-event baseline, not a claim of work performed during the October 21-22 event.
+**Niu Te · Imperial College London**
 
-Run `node research/build_submission_cases.mjs` to reproduce case arrays, `python research/submission_figures.py` for plots, and `python research/build_submission_documents.py` for PDFs (NumPy/Matplotlib and ReportLab/PyPDF respectively). The submission pack also includes the exact numerical source and tests. Read the submission kit for the unresolved 2026 form/legacy-guideline discrepancy.
+[Live website](https://phaseatlas.onrender.com/) · [PDE Studio](https://phaseatlas.onrender.com/studio.html) · [Research Workbench](https://phaseatlas.onrender.com/workbench.html) · [One-page PDF](https://phaseatlas.onrender.com/submission-2026/PhaseAtlas_One_Page.pdf) · [Video demonstration — 3:58](https://youtu.be/dlfz2zcyLTs)
 
+| 3D space-time surface | Space-time heatmap |
+| --- | --- |
+| ![Computed Robin cooling field plotted over position and time.](dist/submission-2026/figures/surface.png) | ![The same cooling trajectory shown on a fixed colour scale.](dist/submission-2026/figures/heatmap.png) |
 
-A browser-based PDE research workspace connecting custom equations, exact fronts, numerical evolution, visual diagnostics, and reproducible evidence.
+## Run locally
 
-## Custom PDE Studio
+Requirements: **Python 3.10+** and a modern browser. The local website uses the Python standard library and needs no package installation.
 
-Open `studio.html` through the local server, or select **Custom PDE studio** in the navigation. Write one to three coupled evolution equations in 1D or 2D, set parameters, initial data and boundary conditions, and inspect fixed-scale animations, space-time diagrams, means and RMS amplitudes. Twenty-one editable presets cover diffusion, nonlinear waves, phase/reaction dynamics, cooled and insulated rods, a heated plate, fourth-order boundary benchmarks, and the original MAE03 travelling front.
-
-Periodic domains support derivatives through order four with Fourier ETDRK4. Bounded intervals and rectangles support Dirichlet and Neumann conditions independently on each field and edge, including time-dependent boundary data. This backend uses cell-centered finite volumes and SBDF2 for constant diagonal diffusion, reactions, and smooth transport with diffusion. It includes boundary mass-transfer diagnostics and explicit scope checks. A separate 1D fourth-order backend accepts two custom linear boundary conditions per endpoint, including value, slope, curvature, third normal derivative and linear combinations. It uses banded implicit solves for the complete constant diagonal linear operator and retains animation and refinement. All studio backends use a restricted mathematical parser and a cancellable Web Worker. This is not a solver for arbitrary PDEs or geometries; the original wave-front results remain model-specific.
-
-Use **Check resolution** for separate time-step and spatial comparisons. Optional reference functions support trajectory comparisons and sampled PDE residual checks. Export complete JSON/CSV data, vector SVG figures, WebM animations or a configuration link. `research/studio_reference.py` provides independent small-grid checks with NumPy and SciPy. Read `docs/CUSTOM_PDE_STUDIO.md` for syntax, admissible models, benchmarks and limitations.
-
-## Start
-
-On Windows, double-click **START_PhaseAtlas.cmd**, or run:
-
-```powershell
+```bash
+git clone https://github.com/NIU-55383/PhaseAtlas.git
+cd PhaseAtlas
 python launch.py
 ```
 
-The launcher serves `dist/` on localhost and opens a browser. It requires Python 3.10+ but no Python scientific packages for the website. Do not open `index.html` with `file://`: JavaScript modules and workers need HTTP. Chrome or Edge is recommended for WebM export.
+The launcher serves `dist/` and opens the local URL, normally `http://127.0.0.1:8765/`. It tries subsequent ports if that port is occupied. On Windows, double-clicking `START_PhaseAtlas.cmd` does the same thing.
 
-Keep the website and research tools together in the PhaseAtlas repository. On Render, use a **Python 3 Web Service** with `pip install -r requirements.txt` as the Build Command and `gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --access-logfile - --error-logfile -` as the Start Command. Set Health Check Path to `/healthz`. Commit and push these server files before deploying. See `docs/DEPLOYMENT.md` for every dashboard setting.
+To choose a port without opening a browser:
 
-The Flask application serves only `dist/` and exposes a deployment health check. Scientific evolution still runs in browser workers. Server-side simulation, accounts, persistent experiments, and background jobs are future features, not enabled by choosing Web Service alone.
+```bash
+python launch.py --port 9000 --no-browser
+```
 
-To check the server routes after installing the root requirements, run `python -m unittest discover -s tests -p test_server.py`. Gunicorn runs on Linux (including Render); keep using `python launch.py` for the dependency-free Windows preview.
+Use the printed HTTP address so JavaScript modules and Web Workers load correctly. Chrome or Edge supports the WebM animation export.
 
-## What works
+## Try an experiment
 
-- Cubic fourth-order front: exact translation, linear and nonlinear perturbation evolution.
-- Burgers shock: exact translation, linear and nonlinear evolution.
-- KdV-Burgers front: exact translation, formula residual and analytic dispersion support; no third-order numerical boundary evolution.
-- Animated front and disturbance; fixed-scale space-time heatmap; global, local, and exponentially weighted norm histories.
-- Far-field spectral atlas and bounded numerical shooting continuation near the cubic reference.
-- Analytic residual inspector, including deliberate sign-error detection and the N=3/2 real-branch explanation.
-- One-click joint spatial/time refinement; boundary-buffer monitoring; evidence labels.
-- JSON, CSV, SVG, PNG, standalone HTML report, and WebM animation exports; JSON import and local parameter history.
-- English interface; mobile layout; local computation after serving assets.
+1. Open **PDE Studio** and select **Convection-cooled rod · Robin**. For the illustrated case, use 64 cells, final time 3, time step 0.001 and 121 saved frames.
+2. Run the model. Play or scrub the temperature profiles, inspect the heatmap, then rotate the **3D space-time surface**. Its axes are position, saved time and field amplitude.
+3. Use **Check resolution** to compare time steps and spatial grids separately. Export the configuration and trajectory to retain the equation, boundary data, parameters and numerical settings.
+4. In **Research Workbench**, inspect derived observables such as `-nu*Dx(u,1)` for heat flux, place virtual probes, compare parameter runs and inspect boundary-balance diagnostics.
 
-## Reproduce the science
+The [Studio guide](docs/CUSTOM_PDE_STUDIO.md) gives expression syntax, boundary conventions, editable examples and backend restrictions.
 
-```powershell
+## Models and methods
+
+The Studio supports **one to three real fields** on intervals and rectangular domains.
+
+| Model family | Domain and boundary data | Numerical method |
+| --- | --- | --- |
+| Periodic evolution equations | 1D intervals or 2D rectangles; spatial derivatives through total order four | Fourier differentiation and ETDRK4 for extracted diagonal linear terms |
+| Diffusion, reaction and supported smooth transport | 1D/2D bounded domains; Dirichlet, Neumann or passive Robin conditions per field and edge | Cell-centered finite volumes with SBDF2; constant non-negative diagonal diffusion |
+| Supported fourth-order equations | 1D intervals; two independent configurable linear conditions at each endpoint | Banded implicit SBDF2 solves with boundary reconstruction; negative constant diagonal fourth-derivative coefficient |
+
+Fourth-order boundary rows can combine field value, outward slope, curvature and third outward derivative with user-defined target formulas. Presets include heat diffusion, viscous Burgers, KdV, Kuramoto–Sivashinsky, Allen–Cahn, Gray–Scott, Cahn–Hilliard and fourth-order travelling fronts.
+
+Animations, fixed-scale heatmaps, 3D surfaces, reference differences, user-defined observables, virtual probes, parameter scans and refinement comparisons use computed trajectories. The 1D space-time surface supports rotation, playback, progressive reveal and PNG export. Display sampling leaves the full saved arrays intact. JSON/CSV exports retain numerical data; SVG/PNG and WebM exports support figures and presentations.
+
+Supported geometries are intervals and rectangles. For bounded domains, variable/nonlinear diffusion and cross-diffusion require additional backends. Irregular geometries and 2D nonperiodic fourth-order problems are outside the current scope. Periodic terms left outside the diagonal linear operator are treated explicitly and can impose time-step restrictions. Reference comparisons and refinement provide numerical evidence whose interpretation depends on the model, grid, time step and boundary data.
+
+## Verification and recorded results
+
+The current mathematical and numerical suite contains **96 tests, all passing**. It checks expression parsing, exact/manufactured solutions, boundary enforcement, refinement, observables, conservation diagnostics and surface coordinates.
+
+With Node.js installed, run the complete suite from the repository root. This command needs no npm dependencies:
+
+```bash
+node --test tests/science.test.mjs tests/studio.test.mjs tests/boundaries.test.mjs tests/fourth.test.mjs tests/evidence.test.mjs tests/research.test.mjs tests/robin.test.mjs tests/spacetime.test.mjs
+```
+
+`npm test` runs the same suite when npm is available. The suite was checked with Node.js 24.19.0.
+
+The recorded Robin eigenmode benchmark uses 16, 32 and 64 cells at a fixed time step of 0.0002. Final RMS errors against the exact mode are approximately `4.86e-5`, `1.25e-5` and `3.15e-6`; adjacent-grid comparisons give an observed spatial order of **1.99995**. A separate 16-run cooling scan compares diffusivity and surface exchange. These measurements are stored in [case data](dist/data/submission-2026/) and the [submission manifest](dist/submission-2026/manifest.json).
+
+![Exact-mode refinement and thermal-content balance computed from saved numerical fields.](dist/submission-2026/figures/verification.png)
+
+## Reproduce the figures and summary
+
+Install the optional scientific and document-generation dependencies:
+
+```bash
 python -m pip install -r research/requirements.txt
-python research/phaseatlas.py --verify
-python research/phaseatlas.py --config your-export.json --output reference.json
-node --test tests/science.test.mjs
-node research/make_fixtures.mjs
-python research/validate_reference.py
+python -m pip install matplotlib reportlab pypdf pillow
 ```
 
-The Python reference uses independently assembled sparse matrices with SciPy `expm_multiply` or BDF. The browser uses a dependency-free pentadiagonal SBDF2 solver in a Web Worker.
+The following commands regenerate the stored case arrays, scientific figures and current one-page PDF:
 
-For editable scientific figures:
-
-```powershell
-python -m pip install matplotlib
-python research/make_figures.py --input your-export.json --output figures
+```bash
+node research/build_submission_cases.mjs
+python research/submission_figures.py
+python research/submission_visuals.py
+python research/build_submission_one_page.py
 ```
 
-This generates four groups of PNG, SVG and PDF figures. `04_reference_dispersion` always describes the cubic reference and is titled accordingly.
+Outputs are written to `dist/data/submission-2026/` and `dist/submission-2026/`. The PDF builder uses Windows Arial font paths; adjust its font registration for another operating system. The committed PDF and figures can be viewed directly on any platform.
 
-## Read first
+For an independent small-grid NumPy/SciPy reference calculation:
 
-- `docs/ACCEPTANCE.md`: acceptance walkthrough.
-- `docs/DEPLOYMENT.md`: Render Web Service setup and deployment checks.
-- `docs/DESIGN.md`: visual system and the supplied Imperial Beamer palette.
-- `docs/RESEARCH_NOTES.md`: equations, solver, validation, caveats and provenance.
-- `docs/DEMO_SCRIPT.md`: four-minute presentation script.
-- `docs/project-brief.html` / `docs/PhaseAtlas_Project_Brief.pdf`: one-page project summary.
-- `dist/data/verification.json`: measured validation record.
-- `docs/figures/`: scientific figures from an actual computation.
+```bash
+python research/studio_reference.py dist/data/submission-2026/reference/robin-mode-input.json --output robin-reference-check.json
+```
 
-## Scope
+The reference uses independently assembled spatial operators and SciPy time integration. Further benchmarks and measured limitations are documented in the [Studio guide](docs/CUSTOM_PDE_STUDIO.md) and [research notes](docs/RESEARCH_NOTES.md).
 
-This is a specialized research workbench, not a general-purpose PDE solver. Numerical observations are not rigorous existence or nonlinear stability proofs. The exact front is prior mathematical structure; the new deliverable is the integrated software and reproducibility workflow. A future Nonlinearity paper must establish a new mathematical result independently of the quality of the interface.
+## Optional web deployment
 
-The interface makes no external LLM requests. Development was AI-assisted; calculations are deterministic numerical and symbolic procedures. No API key is required. No experimental calibration or engineering performance is claimed. License selection and any public source release remain with the project owner.
+The Flask application serves `dist/` and exposes `/healthz`. Scientific evolution runs in browser workers. For a Linux Python Web Service, install the root requirements and start:
 
-## 3D space-time surfaces
+```bash
+pip install -r requirements.txt
+gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --access-logfile - --error-logfile -
+```
 
-After a 1D run, **PDE Studio** and **Research Workbench** show an **x–t–amplitude** surface below the existing plots. It supports pointer rotation, keyboard rotation/tilt, zoom, an independent saved-frame player synchronized with the original view, progressive reveal, and a 2400 × 1600 PNG export. Select a field in Studio or apply an observation expression in Workbench; the surface follows that selection. Height can show the field/observation or its pointwise change from the first saved frame. Studio also offers signed difference from a supplied reference formula, when present. This comparison is not automatically an error against an exact solution.
+See [deployment instructions](docs/DEPLOYMENT.md) for the Render dashboard settings. Continue using `python launch.py` for the standard-library local preview.
 
-The axes use actual saved times and the solver's coordinates (periodic nodes or bounded cell centers). Display mesh sampling is capped at 113 spatial points and 73 saved times, includes the first/last samples, and never changes trajectories, JSON/CSV exports, or refinement checks. All saved values determine a fixed vertical/color scale; difference views use a symmetric scale. The periodic seam is not duplicated and bounded face values are not reconstructed. A dark overlaid curve marks the selected frame. 2D spatial models keep their existing x–y field/surface views.
+## Project history and development
 
-For the original research example, choose **MAE03 · 3/2-power travelling front**, run, then scroll to **3D space-time surface**. The perturbed MAE03 preset also supports a signed reference-difference surface.
+The numerical backends and benchmark arrays were developed before the hackathon. The event submission presents the integrated research workflow, updated scientific figures and documented 3D and flux-probe demonstrations. Saved records retain their generation dates and source hashes.
+
+OpenAI Codex assisted implementation, debugging, verification scripts, documentation and presentation assets. Experiments run through deterministic numerical procedures in browser workers and require no model-service account or API key.
