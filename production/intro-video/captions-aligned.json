@@ -306,21 +306,45 @@
     "text": "inspect and reproduce the calculation."
   },
   {
-    "scene": "outro",
+    "scene": "probe",
     "start": 203.27,
-    "end": 208.71,
+    "end": 206.83,
+    "text": "Saved simulations can also answer new physical questions."
+  },
+  {
+    "scene": "probe",
+    "start": 207.11,
+    "end": 212.57,
+    "text": "Here, I turn temperature into heat flux by entering minus nu times its spatial derivative."
+  },
+  {
+    "scene": "probe",
+    "start": 212.83,
+    "end": 217.31,
+    "text": "A virtual probe then tracks the flux at a chosen position, so researchers can compare"
+  },
+  {
+    "scene": "probe",
+    "start": 217.31,
+    "end": 219.95,
+    "text": "local transport without rerunning the model."
+  },
+  {
+    "scene": "outro",
+    "start": 223.27,
+    "end": 228.71,
     "text": "The longer-term goal is a research platform that helps people ask better mathematical questions and"
   },
   {
     "scene": "outro",
-    "start": 208.71,
-    "end": 213.377,
+    "start": 228.71,
+    "end": 233.377,
     "text": "inspect the evidence together. I am Niu Te from Imperial College London."
   },
   {
     "scene": "outro",
-    "start": 213.67,
-    "end": 215.929,
+    "start": 233.67,
+    "end": 235.929,
     "text": "This is PhaseAtlas."
   }
 ]

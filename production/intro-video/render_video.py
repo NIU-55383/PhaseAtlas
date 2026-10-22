@@ -125,14 +125,10 @@ class Film:
         if index in self.bases:return self.bases[index].copy()
         s=self.story['scenes'][index];im=Image.new('RGB',(W,H),'white');d=ImageDraw.Draw(im)
         text(d,(92,40),'PhaseAtlas',34,BLUE,True)
-        tag='VISUAL ROUGH CUT · VOICE PENDING' if self.rough else 'A RESEARCH WORKBENCH FOR PDEs'
-        text(d,(1828,53),tag,19,MUTED,anchor='ra');d.line((92,103,1828,103),fill=LINE,width=2)
-        labels={'intro':'THE QUESTION','studio':'EDITABLE MODELS','cooling':'HEAT TRANSFER','verification':'NUMERICAL VERIFICATION','scan':'PARAMETER EXPLORATION','front':'FOURTH-ORDER RESEARCH','reuse':'REPRODUCIBLE EVIDENCE','demo':'LIVE STUDIO WALKTHROUGH','outro':'PHASEATLAS'}
-        text(d,(92,130),f"{index+1:02d} / {len(self.story['scenes']):02d}     {labels[s['key']]}",22,BLUE,True)
+        d.line((92,103,1828,103),fill=LINE,width=2)
         fit(d,(92,173),s['title'],58,width=1740)
         d.line((92,1009,1828,1009),fill=LINE,width=2)
-        text(d,(92,1030),'PhaseAtlas · Niu Te · Imperial College London',20,MUTED)
-        text(d,(1828,1030),'Recorded numerical experiments',20,MUTED,anchor='ra')
+        text(d,(92,1030),'Niu Te · Imperial College London',20,MUTED)
         self.bases[index]=im.copy();return im
     def frame(self,t):
         last=len(self.story['scenes'])-1;index=min(last,next((i for i,s in enumerate(self.story['scenes'])if t<s['end']),last));s=self.story['scenes'][index];p=(t-s['start'])/(s['end']-s['start'])
@@ -140,18 +136,52 @@ class Film:
         getattr(self,'scene_'+s['key'])(im,d,np.clip(p,0,1))
         caption=next((v for a,b,v in self.captions if a<=t<b),'')
         for i,v in enumerate(wrap(caption,32,1670)):text(d,(960,926+i*43),v,32,INK,anchor='mt')
-        d.rectangle((0,1073,int(W*t/self.duration),1079),fill=BLUE)
-        text(d,(960,1030),f'{int(t)//60}:{int(t)%60:02d} / {self.duration//60}:{self.duration%60:02d}',20,MUTED,anchor='ma')
         return im
 
     def scene_intro(self,im,d,p):
-        text(d,(95,303),'Model.',104,INK,True);text(d,(95,430),'Motion.',104,INK,True);text(d,(95,557),'Evidence.',104,BLUE,True)
-        card(d,(935,289,1828,797));text(d,(989,330),'A REAL COMPUTED TEMPERATURE FIELD',22,MUTED,True)
-        xy=axes(d,(1020,452,1750,690),(-1,1),(0,1.1),[(-1,'−1'),(0,'0'),(1,'1')],[(.2,'0.2'),(1,'1.0')],'Position x','Temperature u')
-        u=interpolate(self.u,p);line(d,xy(self.x,u),BLUE,6)
-        text(d,(1750,386),f't = {3*p:.2f}',30,BLUE,True,anchor='ra')
-        for x,n,v in [(95,'01','Define'),(385,'02','Check'),(675,'03','Share')]:
-            text(d,(x,807),n,23,BLUE,True);text(d,(x+54,800),v,35,INK,True)
+        if not hasattr(self,'intro_visuals'):
+            figures=self.repo/'dist/submission-2026/figures'
+            self.intro_visuals={}
+            for name in ['surface','heatmap']:
+                picture=Image.open(figures/(name+'.png')).convert('RGB');pixels=np.array(picture)
+                yy,xx=np.where(np.any(pixels<235,axis=2));box=(max(0,int(xx.min())-8),max(0,int(yy.min())-8),min(picture.width,int(xx.max())+9),min(picture.height,int(yy.max())+9))
+                self.intro_visuals[name]=ImageOps.contain(picture.crop(box),(355,244),method=Image.Resampling.LANCZOS)
+        para(d,(95,282),'Edit a model, inspect its evolution,\nand share a complete calculation.',29,505,gap=1.35)
+        card(d,(92,403,610,716),PALE)
+        text(d,(120,425),'Editable heat-transfer model',25,BLUE,True)
+        text(d,(120,475),'uₜ = νuₓₓ',43,INK,True)
+        text(d,(120,542),'u(x, 0) = 1',29,INK)
+        text(d,(120,589),'∂ₙu + Bi (u − uₐ) = 0',27,INK)
+        text(d,(120,637),'ν = 0.1    Bi = 2    uₐ = 0.2',24,MUTED)
+        text(d,(120,677),'64 cells · Δt = 0.001 · T = 3',22,MUTED)
+        text(d,(95,748),'Numerical checks and exports',24,BLUE,True)
+        para(d,(95,790),'Time / grid refinement\nBoundary-balance diagnostics\nJSON, CSV, figures and animation',25,505,gap=1.35)
+
+        for name,rect,title in [('surface',(642,281,1230,590),'3D space-time surface'),('heatmap',(1250,281,1828,590),'Space-time heatmap')]:
+            x0,y0,x1,y1=rect;card(d,rect,'white',LINE);text(d,(x0+22,y0+16),title,25,BLUE,True)
+            photo=self.intro_visuals[name];im.paste(photo,(x0+18,y0+58))
+        text(d,(1016,369),'64 cells',31,INK,True)
+        text(d,(1016,418),'121 saved times',21,MUTED)
+        text(d,(1016,479),'x / t / u',29,BLUE,True)
+        para(d,(1016,523),'Space and time\nin one surface',20,195,gap=1.3)
+        text(d,(1630,369),'u(x, t)',32,BLUE,True)
+        para(d,(1630,420),'Fixed colour\nscale',21,175,gap=1.3)
+        text(d,(1630,498),'0 ≤ t ≤ 3',22,INK)
+        text(d,(1630,538),'−1 ≤ x ≤ 1',22,INK)
+
+        card(d,(642,610,1230,897),'white',LINE)
+        text(d,(664,628),'Animated solution profile',24,BLUE,True)
+        text(d,(1204,630),f't = {3*p:.2f}',23,BLUE,True,anchor='ra')
+        xy=axes(d,(732,716,1190,805),(-1,1),(.4,1.05),[(-1,'−1'),(0,'0'),(1,'1')],[(.5,'0.5'),(1,'1.0')],'Position x','Temperature u')
+        line(d,xy(self.x,interpolate(self.u,p)),BLUE,5)
+
+        card(d,(1250,610,1828,897),'white',LINE)
+        text(d,(1272,628),'Exact-mode resolution check',24,BLUE,True)
+        ns=np.log2(np.array(self.summary['robin']['N']));errors=np.log10(self.summary['robin']['errors'])
+        ab=axes(d,(1354,716,1776,805),(4,6),(-6,-4),[(4,'16'),(5,'32'),(6,'64')],[(-6,'10⁻⁶'),(-5,'10⁻⁵'),(-4,'10⁻⁴')],'Cells N','Final RMS error')
+        line(d,ab(ns,errors),BLUE,4)
+        for x,y in ab(ns,errors):dot(d,x,y,BLUE,5)
+        text(d,(1789,671),'Observed order ≈ 2',21,INK,True,anchor='ra')
 
     def scene_studio(self,im,d,p):
         photo=self.photos['studio'].crop((375,330,2110,1360))
@@ -299,19 +329,79 @@ class Film:
         seconds=p*60
         im.paste(self.demo.at(seconds),(0,105))
         d.rectangle((630,25,1830,90),fill='white')
-        label=('01 / EDIT THE MODEL' if seconds<11 else '02 / SET BOUNDARIES' if seconds<23 else '03 / RUN AND INSPECT' if seconds<35 else '04 / CHECK RESOLUTION' if seconds<46 else '05 / EXPORT THE EXPERIMENT')
-        text(d,(1828,53),'LIVE STUDIO  ·  '+label,24,BLUE,True,anchor='ra')
+
+    def scene_probe(self,im,d,p):
+        if not hasattr(self,'probe_data'):
+            self.probe_data=json.loads((HERE/'assets/heat-flux.json').read_text(encoding='utf-8'))
+            self.probe_rows=np.array(self.probe_data['fluxFrames'])
+            self.probe_history=np.array([r['value'] for r in self.probe_data['probeHistory']])
+            self.probe_controls=Image.open(HERE/'assets/probe-controls.png').convert('RGB').resize((488,181),Image.Resampling.LANCZOS)
+            self.probe_expression=Image.open(HERE/'assets/probe-expression.png').convert('RGB').resize((488,76),Image.Resampling.LANCZOS)
+        q=np.clip((p-.07)/.82,0,1);time=3*q
+        xs=np.array(self.probe_data['x']);ts=np.array(self.probe_data['times'])
+        values=interpolate(self.probe_rows,q);value=float(interpolate(self.probe_history,q))
+        text(d,(95,285),'CUSTOM OBSERVATION',23,BLUE,True)
+        text(d,(95,334),'q = −ν ∂u/∂x',47,INK,True)
+        para(d,(95,406),'Heat flux from a saved\ntemperature field',28,530,gap=1.3)
+        im.paste(self.probe_expression,(95,500))
+        im.paste(self.probe_controls,(95,601))
+        text(d,(95,824),'121 saved fields · 64 cells',25,INK,True)
+        para(d,(95,867),'Postprocess the existing trajectory',23,530,fill=MUTED)
+        d.line((650,282,650,900),fill=LINE,width=2)
+
+        text(d,(714,285),'Heat-flux profile',27,BLUE,True)
+        text(d,(1792,285),f't = {time:.2f}',27,BLUE,True,anchor='ra')
+        ab=axes(d,(812,390,1790,552),(-1,1),(-.14,.14),[(-1,'−1'),(0,'0'),(1,'1')],[(-.1,'−0.1'),(0,'0'),(.1,'0.1')],'Position x','Heat flux q')
+        line(d,ab([-1,1],[0,0]),MUTED,1)
+        line(d,ab(xs,values),BLUE,5)
+        xp=ab([.75,.75],[-.14,.14])
+        for y in range(round(xp[1,1]),round(xp[0,1]),12):d.line((xp[0,0],y,xp[0,0],min(y+5,xp[0,1])),fill=ORANGE,width=2)
+        px,py=ab([.75],[value])[0];dot(d,px,py,ORANGE,7)
+        text(d,(1792,338),'Probe x = 0.75',24,ORANGE,True,anchor='ra')
+
+        text(d,(714,642),'Virtual probe: q(0.75, t)',27,BLUE,True)
+        text(d,(1792,642),f'q = {value:.5f}',27,INK,True,anchor='ra')
+        xy=axes(d,(812,739,1790,824),(0,3),(0,.065),[(0,'0'),(1,'1'),(2,'2'),(3,'3')],[(0,'0'),(.03,'0.03'),(.06,'0.06')],'Time t','Local heat flux q')
+        line(d,xy(ts,self.probe_history),LINE,3)
+        n=max(1,int(q*(len(ts)-1))+1)
+        tx=np.append(ts[:n],time);ty=np.append(self.probe_history[:n],value)
+        line(d,xy(tx,ty),BLUE,5)
+        px,py=xy([time],[value])[0];dot(d,px,py,ORANGE,6)
 
     def scene_outro(self,im,d,p):
-        text(d,(92,306),'PhaseAtlas',132,BLUE,True)
-        para(d,(100,495),'Explore a model.\nInspect the evidence.\nShare the calculation.',48,990,bold=True)
-        card(d,(1160,319,1828,834));text(d,(1206,363),'OPEN RESEARCH WORKFLOW',23,BLUE,True)
-        para(d,(1206,431),'Editable equations.\nReal numerical animations.\nChecks you can inspect.',33,550,gap=1.55)
-        d.line((1206,640,1779,640),fill=LINE,width=2)
-        para(d,(1206,677),'Run experiments locally.\nExport reusable evidence.',26,550)
-        if not self.rough:text(d,(1206,779),'Narration: synthetic male voice',22,MUTED)
-        text(d,(100,788),'phaseatlas.onrender.com',40,BLUE,True)
-        text(d,(100,854),'Niu Te · Imperial College London',30,INK)
+        if not hasattr(self,'outro_visuals'):
+            self.outro_visuals={}
+            figures=self.repo/'dist/submission-2026/figures'
+            for name,size in [('surface',(620,330)),('heatmap',(530,330))]:
+                picture=Image.open(figures/(name+'.png')).convert('RGB');pixels=np.array(picture)
+                yy,xx=np.where(np.any(pixels<235,axis=2))
+                box=(max(0,int(xx.min())-8),max(0,int(yy.min())-8),min(picture.width,int(xx.max())+9),min(picture.height,int(yy.max())+9))
+                self.outro_visuals[name]=ImageOps.contain(picture.crop(box),size,method=Image.Resampling.LANCZOS)
+        columns=[(92,705),(756,1301),(1360,1828)]
+        for (x0,x1),heading in zip(columns,['3D space-time surface','Solution across space and time','Grid-refinement check']):
+            text(d,(x0,285),heading,27,BLUE,True)
+            d.line((x0,328,x1,328),fill=LINE,width=2)
+        for name,(x0,x1) in zip(['surface','heatmap'],columns[:2]):
+            picture=self.outro_visuals[name]
+            im.paste(picture,(round((x0+x1-picture.width)/2),350))
+        ns=np.log2(np.array(self.summary['robin']['N']));errors=np.log10(self.summary['robin']['errors'])
+        ab=axes(d,(1443,412,1802,605),(4,6),(-6,-4),[(4,'16'),(5,'32'),(6,'64')],[(-6,'10⁻⁶'),(-5,'10⁻⁵'),(-4,'10⁻⁴')],'Cells N','Final RMS error')
+        line(d,ab(ns,errors),BLUE,4)
+        for x,y in ab(ns,errors):dot(d,x,y,BLUE,6)
+        text(d,(1360,697),'Observed order ≈ 2.000',26,INK,True)
+        text(d,(92,697),'64 cells · 121 saved times',26,INK,True)
+        text(d,(756,697),'Heat diffusion · Robin boundaries',26,INK,True)
+        d.line((92,735,1828,735),fill=LINE,width=2)
+        features=[
+            (92,'Custom PDEs','Periodic, Dirichlet, Neumann and Robin boundaries; extra conditions for fourth-order models.',585),
+            (756,'Interactive visualization','Animated profiles, rotatable 3D surfaces and saved solution fields.',545),
+            (1360,'Reproducible experiments','Resolution checks and model, data, figure and video exports.',468),
+        ]
+        for x,title,description,width in features:
+            text(d,(x,755),title,27,BLUE,True)
+            para(d,(x,799),description,24,width,gap=1.26)
+        text(d,(92,881),'phaseatlas.onrender.com',29,BLUE,True)
+        text(d,(1828,881),'github.com/NIU-55383/PhaseAtlas',25,MUTED,anchor='ra')
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--repo',type=Path,default=Path(r'C:\Users\牛特\Documents\GitHub\PhaseAtlas'));parser.add_argument('--fps',type=int,default=24);parser.add_argument('--preview-only',action='store_true');parser.add_argument('--audio','--approved-audio',dest='approved_audio',type=Path)
@@ -347,5 +437,6 @@ def main():
     film.demo.close()
     manifest={'video':target.name,'durationSeconds':film.duration,'width':W,'height':H,'fps':args.fps,'fonts':'Segoe UI with verified Cambria Math fallback for missing mathematical glyphs','audioStatus':'Generic synthetic male narration, Kokoro am_puck; no voice cloning' if args.approved_audio else 'Silent visual rough cut','dataStatus':film.summary['status'],'playback':'Linear interpolation of stored numerical frames; no simulated data invented','sourceFiles':{n+'.json':hashlib.sha256((film.data/(n+'.json')).read_bytes()).hexdigest()for n in ['summary','cooling','cooling-scan','fourth-order-front']},'videoSha256':hashlib.sha256(target.read_bytes()).hexdigest()}
     manifest['walkthrough']={'type':'Actual browser recording','seconds':60,'videoSha256':hashlib.sha256((HERE/'assets/studio-walkthrough.mp4').read_bytes()).hexdigest(),'exportSha256':hashlib.sha256((out/'demo-experiment.json').read_bytes()).hexdigest()}
+    manifest['derivedObservation']={'scene':'probe','seconds':20,'expression':'-nu*Dx(u,1)','probeX':.75,'dataSha256':hashlib.sha256((HERE/'assets/heat-flux.json').read_bytes()).hexdigest(),'sourceExperimentSha256':film.probe_data['sourceSha256'],'source':'Existing saved solution; no additional PDE solve for the plotted derived quantities'}
     (out/'render-manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8');print(json.dumps({'video':str(target),'bytes':target.stat().st_size,'seconds':film.duration}),flush=True)
 if __name__=='__main__':main()

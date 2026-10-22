@@ -203,13 +203,29 @@ It includes the configuration, the saved fields, and the numerical checks, so an
 inspect and reproduce the calculation.
 
 52
-00:03:23,270 --> 00:03:28,710
-The longer-term goal is a research platform that helps people ask better mathematical questions and
+00:03:23,270 --> 00:03:26,830
+Saved simulations can also answer new physical questions.
 
 53
-00:03:28,710 --> 00:03:33,377
-inspect the evidence together. I am Niu Te from Imperial College London.
+00:03:27,110 --> 00:03:32,570
+Here, I turn temperature into heat flux by entering minus nu times its spatial derivative.
 
 54
-00:03:33,670 --> 00:03:35,929
+00:03:32,830 --> 00:03:37,310
+A virtual probe then tracks the flux at a chosen position, so researchers can compare
+
+55
+00:03:37,310 --> 00:03:39,950
+local transport without rerunning the model.
+
+56
+00:03:43,270 --> 00:03:48,710
+The longer-term goal is a research platform that helps people ask better mathematical questions and
+
+57
+00:03:48,710 --> 00:03:53,377
+inspect the evidence together. I am Niu Te from Imperial College London.
+
+58
+00:03:53,670 --> 00:03:55,929
 This is PhaseAtlas.

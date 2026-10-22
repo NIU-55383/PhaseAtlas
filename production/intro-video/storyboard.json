@@ -2,14 +2,14 @@
   "title": "PhaseAtlas — From PDE animations to numerical evidence",
   "author": "Niu Te",
   "language": "en",
-  "duration": 218,
+  "duration": 238,
   "status": "Final English video with generic AI male narration; no personal voice cloning.",
   "scenes": [
     {
       "start": 0,
       "end": 17,
       "key": "intro",
-      "title": "A picture is the beginning.",
+      "title": "PDE simulation, visualization and verification",
       "narration": "A partial differential equation can produce a beautiful animation. But what makes that picture useful for research? We need to see the model, check the calculation, and keep the evidence. This is PhaseAtlas: a visual workbench that connects those steps."
     },
     {
@@ -63,9 +63,16 @@
     },
     {
       "start": 203,
-      "end": 218,
+      "end": 223,
+      "key": "probe",
+      "title": "Heat flux and virtual probes",
+      "narration": "Saved simulations can also answer new physical questions. Here, I turn temperature into heat flux by entering minus nu times its spatial derivative. A virtual probe then tracks the flux at a chosen position, so researchers can compare local transport without rerunning the model."
+    },
+    {
+      "start": 223,
+      "end": 238,
       "key": "outro",
-      "title": "From PDE animations to numerical evidence.",
+      "title": "Models, solution fields and numerical checks",
       "narration": "The longer-term goal is a research platform that helps people ask better mathematical questions and inspect the evidence together. I am Niu Te from Imperial College London. This is PhaseAtlas."
     }
   ]

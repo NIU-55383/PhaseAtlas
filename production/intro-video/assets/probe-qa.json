@@ -1,0 +1,61 @@
+{
+  "frames": 121,
+  "cells": 64,
+  "sourceSha256": "7633a188034c4742c27fdceb7bda4f6451269f0558b87cbb832cd0a3801b88a0",
+  "maxInterpolationDefect": 0,
+  "initialProbe": {
+    "t": 0,
+    "value": 0
+  },
+  "finalProbe": {
+    "t": 3,
+    "value": 0.0512807341944666
+  },
+  "peakProbe": {
+    "t": 1.2750000000000001,
+    "value": 0.05804195613758463
+  },
+  "fluxMin": -0.12138028032875231,
+  "fluxMax": 0.12138028032875124,
+  "screenshots": [
+    {
+      "name": "probe-workspace-wide.png",
+      "box": {
+        "x": 687,
+        "y": -0.40625,
+        "width": 868,
+        "height": 584.875
+      }
+    },
+    {
+      "name": "probe-expression.png",
+      "box": {
+        "x": 687,
+        "y": 1.09375,
+        "width": 361.703125,
+        "height": 55.640625
+      }
+    },
+    {
+      "name": "probe-controls.png",
+      "box": {
+        "x": 1149.5,
+        "y": 464.84375,
+        "width": 405.5,
+        "height": 150.78125
+      }
+    },
+    {
+      "name": "probe-workbench.png",
+      "size": {
+        "width": 1920,
+        "height": 5103
+      }
+    }
+  ],
+  "browserErrors": [],
+  "studyStatus": "Study finished: 1 completed, 0 failed. Independent experiments with recorded grid sizes and time steps.",
+  "expression": "-nu*Dx(u,1)",
+  "probeX": "0.75",
+  "time": "t=3 / 3"
+}

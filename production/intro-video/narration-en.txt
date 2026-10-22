@@ -1,7 +1,7 @@
 PHASEATLAS — ENGLISH INTRODUCTION NARRATION
 Final English narration: generic AI male voice. No personal voice cloning.
 
-00:00–00:17 | A picture is the beginning.
+00:00–00:17 | PDE simulation, visualization and verification
 A partial differential equation can produce a beautiful animation. But what makes that picture useful for research? We need to see the model, check the calculation, and keep the evidence. This is PhaseAtlas: a visual workbench that connects those steps.
 
 00:17–00:36 | Start with your equation.
@@ -25,5 +25,8 @@ The result is more than an animation. Researchers can export the model, paramete
 02:23–03:23 | A complete experiment, in one minute.
 Here is the workflow in the live Studio. Start from a heat-transfer model, then edit the equation and its parameters. Type the spatial derivatives directly into the equation box. I will use diffusion on a one-dimensional rod, with heat exchange at both ends. Each boundary has its own coefficients, so we can change the environment without rewriting the solver. The left and right ends can also use different boundary data. Now run the experiment. Play the saved solution, pause it, or scrub through time to inspect a particular frame. Then choose Check resolution. The platform reruns the model with a smaller time step and a finer grid, and reports the differences. This comparison is something we can actually check. Finally, export the experiment as JSON. It includes the configuration, the saved fields, and the numerical checks, so another researcher can inspect and reproduce the calculation.
 
-03:23–03:38 | From PDE animations to numerical evidence.
+03:23–03:43 | Heat flux and virtual probes
+Saved simulations can also answer new physical questions. Here, I turn temperature into heat flux by entering minus nu times its spatial derivative. A virtual probe then tracks the flux at a chosen position, so researchers can compare local transport without rerunning the model.
+
+03:43–03:58 | Models, solution fields and numerical checks
 The longer-term goal is a research platform that helps people ask better mathematical questions and inspect the evidence together. I am Niu Te from Imperial College London. This is PhaseAtlas.

@@ -39,7 +39,10 @@ def main():
     durations=[]
     for i,scene in enumerate(story['scenes']):
         meta=json.loads((OUT/'ai-narration'/f'{i+1:02d}-{scene["key"]}.json').read_text(encoding='utf-8'))
-        if scene['key']=='demo':
+        if scene['key']=='probe':
+            assert meta['duration']<19,'Probe narration exceeds its 20-second slot'
+            durations.append(20)
+        elif scene['key']=='demo':
             assert meta['duration']<58,'Walkthrough narration exceeds its one-minute slot'
             durations.append(60)
         else:durations.append(math.ceil(meta['duration']+(1.6 if scene['key']=='outro' else 1.0)))

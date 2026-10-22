@@ -1,0 +1,58 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import {pathToFileURL,fileURLToPath} from 'node:url';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
+const {chromium}=require('playwright');
+const assets=path.dirname(fileURLToPath(import.meta.url));
+const repo=process.env.PHASEATLAS_REPO || path.resolve(assets,'../../..');
+const source=path.join(repo,'dist/data/submission-2026/cooling.json');
+const buffer=await fs.readFile(source),experiment=JSON.parse(buffer);
+const {makeObserver,observationHistory}=await import(pathToFileURL(path.join(repo,'dist/research-core.mjs')));
+const expression='-nu*Dx(u,1)',probeX=.75;
+const observe=makeObserver(experiment,expression),fluxFrames=experiment.frames.map(observe),probeHistory=observationHistory(experiment,expression,'point',{x:probeX,y:0});
+const c=experiment.config,x=Array.from({length:c.N},(_,i)=>-c.Lx/2+(i+.5)*c.Lx/c.N),times=experiment.frames.map(f=>f.t);
+if(![...x,...times,...fluxFrames.flat(),...probeHistory.map(v=>v.value)].every(Number.isFinite))throw Error('Non-finite output');
+const fraction=(probeX+c.Lx/2)/c.Lx*c.N-.5,lo=Math.floor(fraction),alpha=fraction-lo;
+const interpolationDefects=probeHistory.map((v,i)=>Math.abs(v.value-((1-alpha)*fluxFrames[i][lo]+alpha*fluxFrames[i][lo+1])));
+const maxInterpolationDefect=Math.max(...interpolationDefects);
+if(maxInterpolationDefect>1e-14)throw Error('Probe differs from linear interpolation');
+const sourceSha256=crypto.createHash('sha256').update(buffer).digest('hex');
+const payload={schema:'phaseatlas-video-observable/v1',expression,probeX,x,times,fluxFrames,probeHistory,sourcePath:source,sourceSha256,sourceSolverVersion:experiment.solverVersion,config:experiment.config,validation:{allFinite:true,maxInterpolationDefect,interpolation:{lowerIndex:lo,upperIndex:lo+1,lowerX:x[lo],upperX:x[lo+1],alpha}}};
+await fs.writeFile(path.join(assets,'heat-flux.json'),JSON.stringify(payload));
+const report={frames:times.length,cells:x.length,sourceSha256,maxInterpolationDefect,initialProbe:probeHistory[0],finalProbe:probeHistory.at(-1),peakProbe:probeHistory.reduce((a,b)=>b.value>a.value?b:a),fluxMin:Math.min(...fluxFrames.flat()),fluxMax:Math.max(...fluxFrames.flat()),screenshots:[],browserErrors:[]};
+const browser=await chromium.launch({channel:'msedge',headless:true});
+try{
+ const page=await browser.newPage({viewport:{width:1920,height:1080},deviceScaleFactor:3});
+ page.on('pageerror',e=>report.browserErrors.push(e.message));
+ await page.goto('http://127.0.0.1:8771/workbench.html',{waitUntil:'networkidle',timeout:30000});
+ await page.locator('#import').setInputFiles(source);
+ await page.waitForFunction(()=>document.querySelector('#status').textContent.startsWith('Imported model'));
+ await page.locator('#run').click();
+ await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Study finished:'),{timeout:90000});
+ report.studyStatus=await page.locator('#status').innerText();
+ if(!report.studyStatus.includes('1 completed, 0 failed'))throw Error(report.studyStatus);
+ await page.locator('#expression').fill(expression);
+ await page.locator('#apply-view').click();
+ await page.locator('#statistic').selectOption('point');
+ await page.locator('#probe-x').fill(String(probeX));
+ await page.locator('#measure').click();
+ await page.locator('#timeline').fill('120');
+ await page.locator('#timeline').dispatchEvent('input');
+ if(await page.locator('#status').evaluate(e=>e.classList.contains('error')))throw Error(await page.locator('#status').innerText());
+ await page.locator('.view-controls').scrollIntoViewIfNeeded();
+ const wide=await page.evaluate(()=>{const a=document.querySelector('.view-controls').getBoundingClientRect(),b=document.querySelector('.playback').getBoundingClientRect();return{x:a.x,y:a.y,width:a.width,height:b.bottom-a.y};});
+ await page.screenshot({path:path.join(assets,'probe-workspace-wide.png'),clip:wide});
+ report.screenshots.push({name:'probe-workspace-wide.png',box:wide});
+ const shots=[['probe-expression.png',page.locator('#expression').locator('..')],['probe-controls.png',page.locator('#series').locator('..').locator('.pair')]];
+ for(const [name,locator] of shots){
+  await locator.scrollIntoViewIfNeeded();await locator.screenshot({path:path.join(assets,name)});
+  report.screenshots.push({name,box:await locator.boundingBox()});
+ }
+ await page.screenshot({path:path.join(assets,'probe-workbench.png'),fullPage:true});
+ report.screenshots.push({name:'probe-workbench.png',size:await page.evaluate(()=>({width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight}))});
+ report.expression=await page.locator('#expression').inputValue();report.probeX=await page.locator('#probe-x').inputValue();report.time=await page.locator('#time').innerText();
+ await fs.writeFile(path.join(assets,'probe-qa.json'),JSON.stringify(report,null,2));
+ console.log(JSON.stringify(report,null,2));
+}finally{await browser.close();}
